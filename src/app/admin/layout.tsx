@@ -1,0 +1,14 @@
+import AdminSidebar from "@/components/AdminSidebar";
+
+export const metadata = {
+  title: "Admin | Mt. Lebanon Flower Sale",
+};
+
+export default function AdminLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="flex min-h-screen -mt-16 pt-16">
+      <AdminSidebar />
+      <div className="flex-1 p-6 bg-earth-50">{children}</div>
+    </div>
+  );
+}

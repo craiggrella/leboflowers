@@ -1,65 +1,62 @@
-import Image from "next/image";
+import { getProducts, getCategories } from "@/lib/data";
+import CatalogPage from "@/components/CatalogPage";
 
 export default function Home() {
+  const products = getProducts();
+  const categories = getCategories();
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
+    <>
+      {/* Hero */}
+      <section className="relative bg-gradient-to-br from-garden-600 via-garden-500 to-garden-700 text-white overflow-hidden">
+        <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1490750967868-88aa4f44baee?w=1600')] bg-cover bg-center opacity-20" />
+        <div className="relative container py-16 md:py-24 text-center">
+          <div className="inline-flex items-center gap-2 bg-white/20 backdrop-blur-sm rounded-full px-4 py-1.5 text-sm font-medium mb-6">
+            <span className="w-2 h-2 bg-sunshine-400 rounded-full animate-pulse" />
+            Community Fundraiser
+          </div>
+          <h1 className="font-display text-4xl md:text-6xl font-bold mb-4 drop-shadow-lg">
+            Mt. Lebanon<br />Flower Sale
           </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
+          <p className="text-lg md:text-xl text-garden-100 max-w-2xl mx-auto mb-8 leading-relaxed">
+            Beautiful flowers from Dean&apos;s Greenhouse supporting our local church
+            and swimming club. Every purchase makes our community bloom!
+          </p>
+          <div className="flex flex-wrap justify-center gap-4">
             <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
+              href="#shop"
+              className="bg-white text-garden-700 font-semibold px-8 py-3 rounded-full hover:bg-garden-50 transition-colors shadow-lg"
             >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
+              Shop Now
+            </a>
+          </div>
+        </div>
+        {/* Decorative wave */}
+        <div className="absolute bottom-0 left-0 right-0">
+          <svg viewBox="0 0 1440 80" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full">
+            <path d="M0 40C240 80 480 0 720 40C960 80 1200 0 1440 40V80H0V40Z" fill="var(--color-background)" />
+          </svg>
+        </div>
+      </section>
+
+      {/* About snippet */}
+      <section className="container py-12">
+        <div className="bg-sunshine-50 border border-sunshine-200 rounded-2xl p-6 md:p-8 text-center max-w-3xl mx-auto">
+          <h2 className="font-display text-2xl font-bold text-earth-900 mb-3">
+            Growing Something Beautiful Together
+          </h2>
+          <p className="text-earth-700 leading-relaxed">
+            100% of proceeds from this flower sale support our nonprofit community organizations.
+            All plants are provided by <strong>Dean&apos;s Greenhouse</strong> — a trusted local grower.
+            Thank you for helping our neighborhood bloom!
           </p>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
-    </div>
+      </section>
+
+      {/* Product Catalog */}
+      <section id="shop" className="container pb-16">
+        <CatalogPage products={products} categories={categories} />
+      </section>
+    </>
   );
 }
