@@ -1,19 +1,31 @@
 "use client";
 
-import { useState } from "react";
-import { Download, Printer, Eye } from "lucide-react";
+import { useEffect, useState } from "react";
+import { createClient } from "@/lib/supabase/client";
+import { Download, Eye } from "lucide-react";
+import { formatCurrency } from "@/lib/utils";
 import Link from "next/link";
-
-// TODO: Replace with Supabase query
-const mockOrders = [
-  { id: "1", order_number: 1001, customer_name: "Jane Doe", customer_email: "jane@example.com", status: "paid", subtotal_cents: 5100, payment_method: "online_card", source: "online", created_at: "2026-03-15T10:30:00Z" },
-  { id: "2", order_number: 1002, customer_name: "Bob Smith", customer_email: "bob@example.com", status: "fulfilled", subtotal_cents: 3400, payment_method: "cash", source: "in_person", created_at: "2026-03-15T11:00:00Z" },
-];
+import type { Order } from "@/types";
 
 export default function OrdersPage() {
+  const [orders, setOrders] = useState<Order[]>([]);
   const [statusFilter, setStatusFilter] = useState("all");
+  const [loading, setLoading] = useState(true);
 
-  const filtered = statusFilter === "all" ? mockOrders : mockOrders.filter((o) => o.status === statusFilter);
+  useEffect(() => {
+    async function load() {
+      const supabase = createClient();
+      const { data } = await supabase
+        .from("orders")
+        .select("*")
+        .order("created_at", { ascending: false });
+      setOrders((data as Order[]) || []);
+      setLoading(false);
+    }
+    load();
+  }, []);
+
+  const filtered = statusFilter === "all" ? orders : orders.filter((o) => o.status === statusFilter);
 
   return (
     <div>
@@ -50,6 +62,7 @@ export default function OrdersPage() {
               <th className="text-left px-4 py-3 font-medium text-earth-600">Customer</th>
               <th className="text-left px-4 py-3 font-medium text-earth-600">Status</th>
               <th className="text-left px-4 py-3 font-medium text-earth-600">Total</th>
+              <th className="text-left px-4 py-3 font-medium text-earth-600">Payment</th>
               <th className="text-left px-4 py-3 font-medium text-earth-600">Source</th>
               <th className="text-left px-4 py-3 font-medium text-earth-600">Date</th>
               <th className="text-left px-4 py-3 font-medium text-earth-600">Actions</th>
@@ -59,49 +72,51 @@ export default function OrdersPage() {
             {filtered.map((order) => (
               <tr key={order.id} className="border-b border-earth-50 hover:bg-earth-50/50">
                 <td className="px-4 py-3 font-mono">{order.order_number}</td>
-                <td className="px-4 py-3">{order.customer_name}</td>
+                <td className="px-4 py-3">
+                  <div>{order.customer_name}</div>
+                  {order.customer_email && (
+                    <div className="text-xs text-earth-400">{order.customer_email}</div>
+                  )}
+                </td>
                 <td className="px-4 py-3">
                   <span
                     className={`px-2 py-0.5 rounded-full text-xs font-medium capitalize ${
-                      order.status === "paid"
-                        ? "bg-garden-100 text-garden-700"
-                        : order.status === "fulfilled"
-                        ? "bg-sunshine-100 text-sunshine-600"
-                        : order.status === "cancelled"
-                        ? "bg-rose-100 text-rose-600"
+                      order.status === "paid" ? "bg-garden-100 text-garden-700"
+                        : order.status === "fulfilled" ? "bg-sunshine-100 text-sunshine-600"
+                        : order.status === "cancelled" ? "bg-rose-100 text-rose-600"
                         : "bg-earth-100 text-earth-600"
                     }`}
                   >
                     {order.status}
                   </span>
                 </td>
-                <td className="px-4 py-3 font-medium">
-                  ${(order.subtotal_cents / 100).toFixed(2)}
+                <td className="px-4 py-3 font-medium">{formatCurrency(order.subtotal_cents)}</td>
+                <td className="px-4 py-3 text-earth-500 text-xs capitalize">
+                  {order.payment_method.replace(/_/g, " ")}
+                  {order.check_number && ` #${order.check_number}`}
                 </td>
-                <td className="px-4 py-3 text-earth-500 capitalize">{order.source.replace("_", " ")}</td>
+                <td className="px-4 py-3 text-earth-500 capitalize">{order.source.replace(/_/g, " ")}</td>
                 <td className="px-4 py-3 text-earth-500">
                   {new Date(order.created_at).toLocaleDateString()}
                 </td>
                 <td className="px-4 py-3">
-                  <div className="flex gap-2">
-                    <Link
-                      href={`/admin/orders/${order.id}`}
-                      className="text-garden-600 hover:text-garden-700"
-                      title="View"
-                    >
-                      <Eye className="w-4 h-4" />
-                    </Link>
-                    <button className="text-earth-400 hover:text-earth-600" title="Print">
-                      <Printer className="w-4 h-4" />
-                    </button>
-                  </div>
+                  <Link
+                    href={`/admin/orders/${order.id}`}
+                    className="text-garden-600 hover:text-garden-700"
+                    title="View"
+                  >
+                    <Eye className="w-4 h-4" />
+                  </Link>
                 </td>
               </tr>
             ))}
           </tbody>
         </table>
 
-        {filtered.length === 0 && (
+        {loading && (
+          <div className="text-center py-8 text-earth-500 text-sm">Loading orders...</div>
+        )}
+        {!loading && filtered.length === 0 && (
           <div className="text-center py-8 text-earth-500 text-sm">No orders found.</div>
         )}
       </div>

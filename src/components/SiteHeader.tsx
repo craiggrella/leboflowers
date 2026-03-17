@@ -3,11 +3,14 @@
 import Link from "next/link";
 import { ShoppingCart, Flower2, Menu, X } from "lucide-react";
 import { useCart } from "@/context/CartContext";
+import { usePathname } from "next/navigation";
 import { useState } from "react";
 
 export default function SiteHeader() {
   const { itemCount } = useCart();
   const [menuOpen, setMenuOpen] = useState(false);
+  const pathname = usePathname();
+  const isAdmin = pathname.startsWith("/admin");
 
   return (
     <header className="sticky top-0 z-50 bg-white/90 backdrop-blur-md border-b border-garden-100 shadow-sm">
@@ -28,33 +31,39 @@ export default function SiteHeader() {
           <Link href="/" className="text-earth-700 hover:text-garden-600 transition-colors">
             Shop
           </Link>
-          <Link href="/cart" className="text-earth-700 hover:text-garden-600 transition-colors">
-            Cart
-          </Link>
-          <Link
-            href="/cart"
-            className="relative inline-flex items-center gap-1.5 bg-garden-600 hover:bg-garden-700 text-white px-4 py-2 rounded-full transition-colors"
-          >
-            <ShoppingCart className="w-4 h-4" />
-            <span>Cart</span>
-            {itemCount > 0 && (
-              <span className="absolute -top-1.5 -right-1.5 bg-rose-500 text-white text-xs font-bold w-5 h-5 rounded-full flex items-center justify-center">
-                {itemCount}
-              </span>
-            )}
-          </Link>
+          {!isAdmin && (
+            <>
+              <Link href="/cart" className="text-earth-700 hover:text-garden-600 transition-colors">
+                Cart
+              </Link>
+              <Link
+                href="/cart"
+                className="relative inline-flex items-center gap-1.5 bg-garden-600 hover:bg-garden-700 text-white px-4 py-2 rounded-full transition-colors"
+              >
+                <ShoppingCart className="w-4 h-4" />
+                <span>Cart</span>
+                {itemCount > 0 && (
+                  <span className="absolute -top-1.5 -right-1.5 bg-rose-500 text-white text-xs font-bold w-5 h-5 rounded-full flex items-center justify-center">
+                    {itemCount}
+                  </span>
+                )}
+              </Link>
+            </>
+          )}
         </nav>
 
         {/* Mobile */}
         <div className="flex items-center gap-3 md:hidden">
-          <Link href="/cart" className="relative">
-            <ShoppingCart className="w-6 h-6 text-garden-700" />
-            {itemCount > 0 && (
-              <span className="absolute -top-1.5 -right-1.5 bg-rose-500 text-white text-xs font-bold w-5 h-5 rounded-full flex items-center justify-center">
-                {itemCount}
-              </span>
-            )}
-          </Link>
+          {!isAdmin && (
+            <Link href="/cart" className="relative">
+              <ShoppingCart className="w-6 h-6 text-garden-700" />
+              {itemCount > 0 && (
+                <span className="absolute -top-1.5 -right-1.5 bg-rose-500 text-white text-xs font-bold w-5 h-5 rounded-full flex items-center justify-center">
+                  {itemCount}
+                </span>
+              )}
+            </Link>
+          )}
           <button onClick={() => setMenuOpen(!menuOpen)} className="text-earth-700">
             {menuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
           </button>
@@ -70,13 +79,15 @@ export default function SiteHeader() {
           >
             Shop All
           </Link>
-          <Link
-            href="/cart"
-            onClick={() => setMenuOpen(false)}
-            className="block text-earth-700 hover:text-garden-600 py-1"
-          >
-            View Cart
-          </Link>
+          {!isAdmin && (
+            <Link
+              href="/cart"
+              onClick={() => setMenuOpen(false)}
+              className="block text-earth-700 hover:text-garden-600 py-1"
+            >
+              View Cart
+            </Link>
+          )}
         </nav>
       )}
     </header>

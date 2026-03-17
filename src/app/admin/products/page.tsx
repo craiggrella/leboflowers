@@ -1,25 +1,51 @@
 "use client";
 
-import { useState } from "react";
-import { products as allProducts, categories } from "@/lib/data";
+import { useEffect, useState } from "react";
+import { createClient } from "@/lib/supabase/client";
 import { formatCurrency } from "@/lib/utils";
+import type { Product, Category } from "@/types";
 
 export default function AdminProductsPage() {
+  const [products, setProducts] = useState<Product[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [search, setSearch] = useState("");
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function load() {
+      const supabase = createClient();
+      const [prodsRes, catsRes] = await Promise.all([
+        supabase.from("products").select("*").order("category_id").order("sort_order"),
+        supabase.from("categories").select("*").order("sort_order"),
+      ]);
+      setProducts((prodsRes.data as Product[]) || []);
+      setCategories((catsRes.data as Category[]) || []);
+      setLoading(false);
+    }
+    load();
+  }, []);
+
+  const toggleStock = async (productId: string, currentlyInStock: boolean) => {
+    const supabase = createClient();
+    await supabase.from("products").update({ in_stock: !currentlyInStock }).eq("id", productId);
+    setProducts((prev) =>
+      prev.map((p) => (p.id === productId ? { ...p, in_stock: !currentlyInStock } : p))
+    );
+  };
 
   const filtered = search
-    ? allProducts.filter(
+    ? products.filter(
         (p) =>
           p.name.toLowerCase().includes(search.toLowerCase()) ||
           p.sku.toLowerCase().includes(search.toLowerCase())
       )
-    : allProducts;
+    : products;
 
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
         <h1 className="font-display text-2xl font-bold text-earth-900">Products</h1>
-        <span className="text-sm text-earth-500">{allProducts.length} total products</span>
+        <span className="text-sm text-earth-500">{products.length} total products</span>
       </div>
 
       <input
@@ -53,21 +79,26 @@ export default function AdminProductsPage() {
                   <td className="px-4 py-3">{formatCurrency(product.price_cents)}</td>
                   <td className="px-4 py-3 text-earth-500">{product.unit_label}</td>
                   <td className="px-4 py-3">
-                    <span
-                      className={`px-2 py-0.5 rounded-full text-xs font-medium ${
+                    <button
+                      onClick={() => toggleStock(product.id, product.in_stock)}
+                      className={`px-2 py-0.5 rounded-full text-xs font-medium cursor-pointer ${
                         product.in_stock
                           ? "bg-garden-100 text-garden-700"
                           : "bg-rose-100 text-rose-600"
                       }`}
                     >
                       {product.in_stock ? "Yes" : "No"}
-                    </span>
+                    </button>
                   </td>
                 </tr>
               );
             })}
           </tbody>
         </table>
+
+        {loading && (
+          <div className="text-center py-8 text-earth-500 text-sm">Loading products...</div>
+        )}
       </div>
     </div>
   );
