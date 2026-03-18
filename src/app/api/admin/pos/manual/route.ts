@@ -8,7 +8,7 @@ export async function POST(req: NextRequest) {
     if (!admin) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     if (!canWrite(admin.role)) return NextResponse.json({ error: "Read-only access" }, { status: 403 });
 
-    const { customerName, paymentMethod, checkNumber, organization, items } = await req.json();
+    const { customerName, customerEmail, customerPhone, paymentMethod, checkNumber, organization, items } = await req.json();
 
     if (!customerName || !items?.length || !paymentMethod) {
       return NextResponse.json({ error: "Missing fields" }, { status: 400 });
@@ -43,7 +43,8 @@ export async function POST(req: NextRequest) {
       .from("orders")
       .insert({
         customer_name: customerName,
-        customer_email: "",
+        customer_email: customerEmail || "",
+        customer_phone: customerPhone || "",
         status: "paid",
         subtotal_cents: totalCents,
         payment_method: paymentMethod,

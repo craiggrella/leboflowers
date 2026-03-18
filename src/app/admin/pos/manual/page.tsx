@@ -22,6 +22,10 @@ export default function PosManualPage() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [search, setSearch] = useState("");
   const [customerName, setCustomerName] = useState("");
+  const [customerEmail, setCustomerEmail] = useState("");
+  const [customerPhone, setCustomerPhone] = useState("");
+  const [organization, setOrganization] = useState("");
+  const [orgs, setOrgs] = useState<{ name: string; logo_url: string | null }[]>([]);
   const [paymentMethod, setPaymentMethod] = useState<"cash" | "check">("cash");
   const [checkNumber, setCheckNumber] = useState("");
   const [items, setItems] = useState<PosItem[]>([]);
@@ -31,12 +35,14 @@ export default function PosManualPage() {
   useEffect(() => {
     async function load() {
       const supabase = createClient();
-      const [prodsRes, catsRes] = await Promise.all([
+      const [prodsRes, catsRes, orgsRes] = await Promise.all([
         supabase.from("products").select("*").order("name"),
         supabase.from("categories").select("*").order("sort_order"),
+        fetch("/api/organizations").then((r) => r.json()),
       ]);
       setProducts((prodsRes.data as Product[]) || []);
       setCategories((catsRes.data as Category[]) || []);
+      setOrgs(orgsRes.organizations || []);
     }
     load();
   }, []);
@@ -84,7 +90,7 @@ export default function PosManualPage() {
       const res = await fetch("/api/admin/pos/manual", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ customerName, paymentMethod, checkNumber, items }),
+        body: JSON.stringify({ customerName, customerEmail, customerPhone, organization, paymentMethod, checkNumber, items }),
       });
       const data = await res.json();
       if (data.success) {
@@ -194,6 +200,48 @@ export default function PosManualPage() {
             </div>
 
             <div>
+              <label className="block text-sm font-medium text-earth-700 mb-1">Email</label>
+              <input
+                type="email"
+                value={customerEmail}
+                onChange={(e) => setCustomerEmail(e.target.value)}
+                className="w-full px-3 py-2 rounded-lg border border-earth-200 text-sm focus:ring-2 focus:ring-garden-400 focus:border-transparent"
+                placeholder="customer@email.com"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-earth-700 mb-1">Phone</label>
+              <input
+                type="tel"
+                value={customerPhone}
+                onChange={(e) => setCustomerPhone(e.target.value)}
+                className="w-full px-3 py-2 rounded-lg border border-earth-200 text-sm focus:ring-2 focus:ring-garden-400 focus:border-transparent"
+                placeholder="(412) 555-0123"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-earth-700 mb-1">Supporting Organization *</label>
+              <div className="space-y-2">
+                {orgs.map((org) => (
+                  <button
+                    key={org.name}
+                    type="button"
+                    onClick={() => setOrganization(org.name)}
+                    className={`w-full px-3 py-2 rounded-lg text-sm font-medium text-left border ${
+                      organization === org.name
+                        ? "bg-garden-600 text-white border-garden-600"
+                        : "bg-white text-earth-600 border-earth-200 hover:border-earth-300"
+                    }`}
+                  >
+                    {org.name}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div>
               <label className="block text-sm font-medium text-earth-700 mb-1">Payment Method</label>
               <div className="flex gap-2">
                 <button
@@ -248,7 +296,7 @@ export default function PosManualPage() {
 
           <button
             onClick={handleRecord}
-            disabled={loading || items.length === 0 || !customerName.trim()}
+            disabled={loading || items.length === 0 || !customerName.trim() || !organization}
             className="w-full flex items-center justify-center gap-2 bg-garden-600 hover:bg-garden-700 text-white font-semibold py-3 rounded-lg transition-colors disabled:opacity-50"
           >
             <FileText className="w-4 h-4" />
