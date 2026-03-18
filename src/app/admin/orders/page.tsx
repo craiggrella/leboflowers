@@ -2,7 +2,7 @@
 
 import { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { Download, Eye, Plus } from "lucide-react";
+import { Download, Eye, Plus, Printer } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
 import Link from "next/link";
 import type { Order } from "@/types";
@@ -44,6 +44,14 @@ function OrdersContent() {
             <Plus className="w-4 h-4" />
             Add Order
           </Link>
+          <a
+            href="/api/admin/orders/print-all?status=paid"
+            target="_blank"
+            className="inline-flex items-center gap-2 bg-earth-100 text-earth-700 px-4 py-2 rounded-lg text-sm font-medium hover:bg-earth-200 transition-colors"
+          >
+            <Printer className="w-4 h-4" />
+            Print All Slips
+          </a>
           <a
             href="/api/admin/export"
             className="inline-flex items-center gap-2 bg-earth-100 text-earth-700 px-4 py-2 rounded-lg text-sm font-medium hover:bg-earth-200 transition-colors"

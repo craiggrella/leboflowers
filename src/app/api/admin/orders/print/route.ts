@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import QRCode from "qrcode";
 
 export async function GET(req: NextRequest) {
   const orderId = req.nextUrl.searchParams.get("id");
@@ -20,6 +21,15 @@ export async function GET(req: NextRequest) {
   if (!order) {
     return NextResponse.json({ error: "Order not found" }, { status: 404 });
   }
+
+  // Generate QR code
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://leboflowers.vercel.app";
+  const fulfillUrl = `${siteUrl}/admin/fulfill?id=${orderId}`;
+  const qrCodeDataUrl = await QRCode.toDataURL(fulfillUrl, {
+    width: 200,
+    margin: 1,
+    color: { dark: "#166534", light: "#ffffff" },
+  });
 
   const formatMoney = (cents: number) => `$${(cents / 100).toFixed(2)}`;
   const isPaid = order.status === "paid" || order.status === "fulfilled";
@@ -84,10 +94,16 @@ export async function GET(req: NextRequest) {
       </button>
     </div>
 
-    <!-- Header -->
-    <div style="text-align: center; margin-bottom: 30px; border-bottom: 3px solid #16a34a; padding-bottom: 20px;">
-      <h1 style="margin: 0; font-size: 28px; color: #166534;">Mt. Lebanon Flower Sale</h1>
-      <p style="margin: 4px 0 0; color: #6b5744; font-size: 13px;">Community Fundraiser &bull; Dean's Greenhouse</p>
+    <!-- Header with QR -->
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; border-bottom: 3px solid #16a34a; padding-bottom: 20px;">
+      <div>
+        <h1 style="margin: 0; font-size: 28px; color: #166534;">Mt. Lebanon Flower Sale</h1>
+        <p style="margin: 4px 0 0; color: #6b5744; font-size: 13px;">Community Fundraiser &bull; Dean's Greenhouse</p>
+      </div>
+      <div style="text-align: center;">
+        <img src="${qrCodeDataUrl}" alt="QR Code" style="width: 120px; height: 120px;" />
+        <p style="margin: 4px 0 0; font-size: 9px; color: #6b5744;">Scan to fulfill</p>
+      </div>
     </div>
 
     <!-- Order Info -->
