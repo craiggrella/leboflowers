@@ -1,16 +1,15 @@
 "use client";
 
-import { useState } from "react";
-import { PayPalScriptProvider, PayPalButtons } from "@paypal/react-paypal-js";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useCart } from "@/context/CartContext";
 import { formatCurrency, formatPhone } from "@/lib/utils";
-import { ArrowLeft, Lock, Heart } from "lucide-react";
+import { ArrowLeft, Heart, CreditCard, Lock } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect } from "react";
+import Script from "next/script";
 
-const paypalClientId = process.env.NEXT_PUBLIC_PAYPAL_CLIENT_ID;
-const stripeEnabled = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY && process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY !== "pk_test_placeholder";
+const squareAppId = process.env.NEXT_PUBLIC_SQUARE_APP_ID;
+const squareEnv = process.env.NEXT_PUBLIC_SQUARE_ENVIRONMENT || "sandbox";
 
 export default function CheckoutPage() {
   const { items, totalCents, clearCart } = useCart();
@@ -20,7 +19,10 @@ export default function CheckoutPage() {
   const [organization, setOrganization] = useState("");
   const [orgs, setOrgs] = useState<{ id: string; name: string; slug: string; logo_url: string | null }[]>([]);
   const [error, setError] = useState("");
-  const [stripeLoading, setStripeLoading] = useState(false);
+  const [processing, setProcessing] = useState(false);
+  const [sdkReady, setSdkReady] = useState(false);
+  const cardRef = useRef<unknown>(null);
+  const cardContainerRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
 
   useEffect(() => {
@@ -34,20 +36,51 @@ export default function CheckoutPage() {
   const cartPayload = items.map((i) => ({
     productId: i.productId,
     sku: i.sku,
-    name: i.name,
-    priceCents: i.priceCents,
     quantity: i.quantity,
   }));
 
-  // Stripe checkout (redirect flow)
-  const handleStripeCheckout = async () => {
-    setStripeLoading(true);
-    setError("");
+  const initializeSquare = useCallback(async () => {
+    if (!squareAppId || !cardContainerRef.current || cardRef.current) return;
+
     try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const payments = (window as any).Square?.payments(squareAppId, squareEnv === "production" ? undefined : "sandbox");
+      if (!payments) return;
+
+      const card = await payments.card();
+      await card.attach(cardContainerRef.current);
+      cardRef.current = card;
+      setSdkReady(true);
+    } catch (err) {
+      console.error("Square SDK init error:", err);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (sdkReady || !squareAppId) return;
+    // Try to init if script already loaded
+    initializeSquare();
+  }, [sdkReady, initializeSquare]);
+
+  const handlePay = async () => {
+    if (!cardRef.current || !customerInfoValid) return;
+    setProcessing(true);
+    setError("");
+
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const result = await (cardRef.current as any).tokenize();
+      if (result.status !== "OK") {
+        setError("Card validation failed. Please check your card details.");
+        setProcessing(false);
+        return;
+      }
+
       const res = await fetch("/api/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          sourceId: result.token,
           items: cartPayload,
           customerName: name,
           customerEmail: email,
@@ -55,17 +88,18 @@ export default function CheckoutPage() {
           organization,
         }),
       });
+
       const data = await res.json();
-      if (data.url) {
-        window.location.href = data.url;
+      if (data.success) {
+        clearCart();
+        router.push("/checkout/success");
       } else {
-        setError(data.error || "Something went wrong.");
-        setStripeLoading(false);
+        setError(data.error || "Payment failed. Please try again.");
       }
     } catch {
       setError("Network error. Please try again.");
-      setStripeLoading(false);
     }
+    setProcessing(false);
   };
 
   if (items.length === 0) {
@@ -81,6 +115,12 @@ export default function CheckoutPage() {
 
   return (
     <div className="container py-8 max-w-2xl">
+      <Script
+        src="https://sandbox.web.squarecdn.com/v1/square.js"
+        strategy="afterInteractive"
+        onLoad={initializeSquare}
+      />
+
       <Link
         href="/cart"
         className="inline-flex items-center gap-1.5 text-garden-600 hover:text-garden-700 text-sm font-medium mb-6"
@@ -91,7 +131,7 @@ export default function CheckoutPage() {
 
       <h1 className="font-display text-3xl font-bold text-earth-900 mb-2">Checkout</h1>
       <p className="text-earth-500 mb-8">
-        Fill in your details, then choose your payment method below.
+        Fill in your details and enter your payment information below.
       </p>
 
       {/* Order summary */}
@@ -101,7 +141,7 @@ export default function CheckoutPage() {
           {items.map((item) => (
             <div key={item.productId} className="flex justify-between text-earth-700">
               <span>
-                {item.sku} - {item.name} x{item.quantity}
+                {item.name} x{item.quantity}
               </span>
               <span>{formatCurrency(item.priceCents * item.quantity)}</span>
             </div>
@@ -198,92 +238,49 @@ export default function CheckoutPage() {
         </div>
       </div>
 
-      {error && (
-        <div className="bg-rose-50 border border-rose-200 text-rose-700 px-4 py-3 rounded-lg text-sm mb-6">
-          {error}
-        </div>
-      )}
-
-      {/* Payment options — always visible but disabled if info incomplete */}
+      {/* Payment */}
       <div className={`space-y-4 ${!customerInfoValid ? "opacity-50 pointer-events-none" : ""}`}>
-        <h2 className="font-semibold text-earth-900">Choose Payment Method</h2>
+        <h2 className="font-semibold text-earth-900 flex items-center gap-2">
+          <CreditCard className="w-5 h-5 text-earth-500" />
+          Payment
+        </h2>
 
-          {/* PayPal */}
-          {paypalClientId && paypalClientId !== "PAYPAL_CLIENT_ID_PLACEHOLDER" ? (
-            <div className="bg-white border border-earth-200 rounded-xl p-5">
-              <h3 className="text-sm font-medium text-earth-700 mb-3">Pay with PayPal</h3>
-              <PayPalScriptProvider options={{ clientId: paypalClientId, currency: "USD" }}>
-                <PayPalButtons
-                  style={{ layout: "vertical", shape: "pill", label: "pay" }}
-                  createOrder={async () => {
-                    const res = await fetch("/api/paypal/create", {
-                      method: "POST",
-                      headers: { "Content-Type": "application/json" },
-                      body: JSON.stringify({
-                        items: cartPayload,
-                        customerName: name,
-                        customerEmail: email,
-                        customerPhone: phone,
-                        organization,
-                      }),
-                    });
-                    const data = await res.json();
-                    if (data.error) throw new Error(data.error);
-                    return data.orderID;
-                  }}
-                  onApprove={async (data) => {
-                    const res = await fetch("/api/paypal/capture", {
-                      method: "POST",
-                      headers: { "Content-Type": "application/json" },
-                      body: JSON.stringify({
-                        orderID: data.orderID,
-                        customerName: name,
-                        customerEmail: email,
-                        customerPhone: phone,
-                        organization,
-                        items: cartPayload,
-                      }),
-                    });
-                    const result = await res.json();
-                    if (result.success) {
-                      clearCart();
-                      router.push("/checkout/success");
-                    } else {
-                      setError(result.error || "Payment failed");
-                    }
-                  }}
-                  onError={(err) => {
-                    console.error("PayPal error:", err);
-                    setError("PayPal payment failed. Please try again.");
-                  }}
-                />
-              </PayPalScriptProvider>
-            </div>
-          ) : (
-            <div className="bg-earth-50 border border-earth-200 rounded-xl p-5 text-center text-earth-500 text-sm">
-              PayPal is not configured yet. Add NEXT_PUBLIC_PAYPAL_CLIENT_ID to enable.
-            </div>
-          )}
+        <div className="bg-white border border-earth-200 rounded-xl p-5">
+          {squareAppId ? (
+            <>
+              <div
+                ref={cardContainerRef}
+                id="card-container"
+                className="mb-4"
+                style={{ minHeight: 89 }}
+              />
 
-          {/* Stripe (if enabled) */}
-          {stripeEnabled && (
-            <div className="bg-white border border-earth-200 rounded-xl p-5">
-              <h3 className="text-sm font-medium text-earth-700 mb-3">Pay with Card (Stripe)</h3>
+              {error && (
+                <div className="bg-rose-50 border border-rose-200 text-rose-700 px-4 py-3 rounded-lg text-sm mb-4">
+                  {error}
+                </div>
+              )}
+
               <button
-                onClick={handleStripeCheckout}
-                disabled={stripeLoading}
-                className="w-full flex items-center justify-center gap-2 bg-earth-900 hover:bg-earth-800 text-white font-semibold py-3 rounded-full transition-colors disabled:opacity-50"
+                onClick={handlePay}
+                disabled={processing || !sdkReady}
+                className="w-full flex items-center justify-center gap-2 bg-garden-600 hover:bg-garden-700 text-white font-semibold py-3 rounded-full transition-colors shadow-md disabled:opacity-50"
               >
                 <Lock className="w-4 h-4" />
-                {stripeLoading ? "Redirecting..." : `Pay ${formatCurrency(totalCents)} with Card`}
+                {processing ? "Processing..." : `Pay ${formatCurrency(totalCents)}`}
               </button>
-            </div>
+            </>
+          ) : (
+            <p className="text-earth-500 text-sm text-center py-4">
+              Payment is not configured yet. Please check back soon.
+            </p>
           )}
-
-          <p className="text-xs text-earth-400 text-center">
-            Your payment is processed securely. We never see your payment details.
-          </p>
         </div>
+
+        <p className="text-xs text-earth-400 text-center">
+          Your payment is processed securely by Square. We never see your card details.
+        </p>
+      </div>
     </div>
   );
 }
