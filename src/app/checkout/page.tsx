@@ -189,16 +189,7 @@ export default function CheckoutPage() {
             </button>
           ))}
         </div>
-        {!organization && (
-          <p className="text-xs text-earth-400 mt-2">Please select an organization to continue.</p>
-        )}
       </div>
-
-      {!customerInfoValid && (
-        <div className="bg-sunshine-50 border border-sunshine-200 text-earth-700 px-4 py-3 rounded-lg text-sm mb-6">
-          Please fill in your name, email, and select an organization to continue with payment.
-        </div>
-      )}
 
       {error && (
         <div className="bg-rose-50 border border-rose-200 text-rose-700 px-4 py-3 rounded-lg text-sm mb-6">
@@ -206,10 +197,9 @@ export default function CheckoutPage() {
         </div>
       )}
 
-      {/* Payment options */}
-      {customerInfoValid && (
-        <div className="space-y-4">
-          <h2 className="font-semibold text-earth-900">Choose Payment Method</h2>
+      {/* Payment options — always visible but disabled if info incomplete */}
+      <div className={`space-y-4 ${!customerInfoValid ? "opacity-50 pointer-events-none" : ""}`}>
+        <h2 className="font-semibold text-earth-900">Choose Payment Method</h2>
 
           {/* PayPal */}
           {paypalClientId && paypalClientId !== "PAYPAL_CLIENT_ID_PLACEHOLDER" ? (
@@ -287,7 +277,6 @@ export default function CheckoutPage() {
             Your payment is processed securely. We never see your payment details.
           </p>
         </div>
-      )}
     </div>
   );
 }
