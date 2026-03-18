@@ -28,7 +28,7 @@ export default function AdminSidebar() {
 
   const sidebarContent = (
     <>
-      <div className="mb-8">
+      <div className="mb-4">
         <div className="flex items-center justify-between">
           <div>
             <h2 className="font-display text-lg font-bold text-white">Admin Panel</h2>
@@ -107,8 +107,10 @@ export default function AdminSidebar() {
       </aside>
 
       {/* Desktop sidebar */}
-      <aside className="hidden lg:block w-64 bg-earth-900 text-earth-200 min-h-screen p-4">
-        {sidebarContent}
+      <aside className="hidden lg:block w-52 bg-earth-900 text-earth-200 p-4 shrink-0">
+        <div className="sticky top-20">
+          {sidebarContent}
+        </div>
       </aside>
     </>
   );
