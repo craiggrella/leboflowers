@@ -2,13 +2,18 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { ShoppingCart, Plus } from "lucide-react";
+import { ShoppingCart, Plus, Check } from "lucide-react";
 import { useCart } from "@/context/CartContext";
 import { formatCurrency } from "@/lib/utils";
+import { useState } from "react";
 import type { Product } from "@/types";
 
 export default function ProductCard({ product }: { product: Product }) {
-  const { addItem } = useCart();
+  const { addItem, items } = useCart();
+  const [justAdded, setJustAdded] = useState(false);
+
+  const inCart = items.find((i) => i.productId === product.id);
+  const qtyInCart = inCart?.quantity || 0;
 
   const handleAdd = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -20,6 +25,8 @@ export default function ProductCard({ product }: { product: Product }) {
       imageUrl: product.image_url,
       unitLabel: product.unit_label,
     });
+    setJustAdded(true);
+    setTimeout(() => setJustAdded(false), 1500);
   };
 
   return (
@@ -48,6 +55,14 @@ export default function ProductCard({ product }: { product: Product }) {
             </span>
           </div>
         )}
+        {/* Cart quantity badge */}
+        {qtyInCart > 0 && (
+          <div className="absolute top-3 right-3">
+            <span className="bg-garden-600 text-white text-xs font-bold px-2 py-1 rounded-full shadow">
+              {qtyInCart} in cart
+            </span>
+          </div>
+        )}
       </div>
 
       <div className="p-4">
@@ -62,10 +77,14 @@ export default function ProductCard({ product }: { product: Product }) {
           {product.in_stock && (
             <button
               onClick={handleAdd}
-              className="bg-garden-500 hover:bg-garden-600 text-white p-2 rounded-full transition-colors shadow-sm hover:shadow"
+              className={`p-2 rounded-full transition-all shadow-sm ${
+                justAdded
+                  ? "bg-garden-700 text-white scale-110"
+                  : "bg-garden-500 hover:bg-garden-600 text-white hover:shadow"
+              }`}
               aria-label={`Add ${product.name} to cart`}
             >
-              <Plus className="w-4 h-4" />
+              {justAdded ? <Check className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
             </button>
           )}
         </div>
