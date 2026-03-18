@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { capturePayPalOrder } from "@/lib/paypal";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { sendOrderReceipt } from "@/lib/email";
 
 export async function POST(req: NextRequest) {
   try {
@@ -68,6 +69,24 @@ export async function POST(req: NextRequest) {
 
     if (itemsError) {
       console.error("Order items error:", itemsError);
+    }
+
+    // Send receipt email (non-blocking)
+    if (customerEmail) {
+      sendOrderReceipt({
+        orderNumber: order.order_number,
+        customerName: customerName || "Customer",
+        customerEmail,
+        items: orderItems.map((i: { sku: string; product_name: string; price_cents: number; quantity: number }) => ({
+          sku: i.sku,
+          name: i.product_name,
+          priceCents: i.price_cents,
+          quantity: i.quantity,
+        })),
+        totalCents,
+        paymentMethod: "online_card",
+        createdAt: new Date().toISOString(),
+      }).catch((err) => console.error("Receipt email failed:", err));
     }
 
     return NextResponse.json({ success: true, orderId: order.id });

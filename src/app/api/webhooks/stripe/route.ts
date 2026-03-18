@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getStripe } from "@/lib/stripe";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { products } from "@/lib/data";
+import { sendOrderReceipt } from "@/lib/email";
 import Stripe from "stripe";
 
 export async function POST(req: NextRequest) {
@@ -27,11 +27,8 @@ export async function POST(req: NextRequest) {
     const customerName = session.metadata?.customerName || "Unknown";
     const customerEmail = session.customer_email || "";
     const customerPhone = session.metadata?.customerPhone || "";
-
-    // Calculate subtotal from line items
     const subtotalCents = session.amount_total || 0;
 
-    // Create order
     const { data: order, error: orderError } = await supabase
       .from("orders")
       .insert({
@@ -53,14 +50,16 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Order creation failed" }, { status: 500 });
     }
 
-    // Parse items from metadata
-    const itemsMeta = JSON.parse(session.metadata?.items || "[]") as {
-      sku: string;
-      qty: number;
-    }[];
+    // Look up products from DB by SKU
+    const itemsMeta = JSON.parse(session.metadata?.items || "[]") as { sku: string; qty: number }[];
+    const skus = itemsMeta.map((i) => i.sku);
+    const { data: dbProducts } = await supabase
+      .from("products")
+      .select("id, sku, name, price_cents")
+      .in("sku", skus);
 
     const orderItems = itemsMeta.map((item) => {
-      const product = products.find((p) => p.sku === item.sku);
+      const product = dbProducts?.find((p) => p.sku === item.sku);
       return {
         order_id: order.id,
         product_id: product?.id || null,
@@ -74,6 +73,24 @@ export async function POST(req: NextRequest) {
     const { error: itemsError } = await supabase.from("order_items").insert(orderItems);
     if (itemsError) {
       console.error("Order items creation failed:", itemsError);
+    }
+
+    // Send receipt email (non-blocking)
+    if (customerEmail) {
+      sendOrderReceipt({
+        orderNumber: order.order_number,
+        customerName,
+        customerEmail,
+        items: orderItems.map((i) => ({
+          sku: i.sku,
+          name: i.product_name,
+          priceCents: i.price_cents,
+          quantity: i.quantity,
+        })),
+        totalCents: subtotalCents,
+        paymentMethod: "online_card",
+        createdAt: new Date().toISOString(),
+      }).catch((err) => console.error("Receipt email failed:", err));
     }
   }
 
