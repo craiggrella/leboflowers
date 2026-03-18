@@ -22,6 +22,7 @@ interface OrderReceiptData {
   customerEmail: string;
   items: { sku: string; name: string; priceCents: number; quantity: number }[];
   totalCents: number;
+  organization?: string;
   paymentMethod: string;
   createdAt: string;
 }
@@ -106,6 +107,13 @@ export async function sendOrderReceipt(data: OrderReceiptData) {
       <div style="text-align:right;border-top:2px solid #166534;padding-top:12px;margin-bottom:24px">
         <span style="font-size:22px;font-weight:800;color:#166534">Total: ${formatMoney(data.totalCents)}</span>
       </div>
+
+      ${data.organization ? `
+      <!-- Organization -->
+      <div style="background:#f0fdf4;border:2px solid #16a34a;border-radius:8px;padding:14px;margin-bottom:20px;text-align:center">
+        <p style="margin:0;font-size:12px;color:#6b5744;text-transform:uppercase;letter-spacing:1px">Your purchase supports</p>
+        <p style="margin:4px 0 0;font-size:18px;font-weight:700;color:#166534">${data.organization}</p>
+      </div>` : ""}
 
       <!-- Pickup info -->
       <div style="background:#fef9c3;border:1px solid #fef08a;border-radius:8px;padding:14px;margin-bottom:20px">

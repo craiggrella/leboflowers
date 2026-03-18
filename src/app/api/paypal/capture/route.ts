@@ -5,7 +5,7 @@ import { sendOrderReceipt } from "@/lib/email";
 
 export async function POST(req: NextRequest) {
   try {
-    const { orderID, customerName, customerEmail, customerPhone, items } = await req.json();
+    const { orderID, customerName, customerEmail, customerPhone, organization, items } = await req.json();
 
     if (!orderID) {
       return NextResponse.json({ error: "Missing PayPal order ID" }, { status: 400 });
@@ -53,6 +53,7 @@ export async function POST(req: NextRequest) {
         payment_method: "online_card",
         source: "online",
         stripe_payment_intent: `paypal_${orderID}`,
+        organization: organization || null,
         notes: `PayPal Order ID: ${orderID}`,
       })
       .select()
@@ -84,6 +85,7 @@ export async function POST(req: NextRequest) {
           quantity: i.quantity,
         })),
         totalCents,
+        organization: organization || undefined,
         paymentMethod: "online_card",
         createdAt: new Date().toISOString(),
       }).catch((err) => console.error("Receipt email failed:", err));

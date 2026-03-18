@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { UserPlus, Trash2, Shield, ShieldCheck, Eye } from "lucide-react";
+import { UserPlus, Trash2, Shield, ShieldCheck, Eye, Plus, Heart } from "lucide-react";
 
 interface AdminUser {
   id: string;
@@ -28,6 +28,16 @@ export default function SettingsPage() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const [orgs, setOrgs] = useState<{ id: string; name: string; logo_url: string | null; active: boolean }[]>([]);
+  const [showAddOrg, setShowAddOrg] = useState(false);
+  const [newOrgName, setNewOrgName] = useState("");
+  const [newOrgLogo, setNewOrgLogo] = useState("");
+
+  const loadOrgs = () => {
+    fetch("/api/admin/organizations")
+      .then((r) => r.json())
+      .then((data) => setOrgs(data.organizations || []));
+  };
 
   const loadUsers = () => {
     fetch("/api/admin/users")
@@ -41,7 +51,7 @@ export default function SettingsPage() {
       });
   };
 
-  useEffect(() => { loadUsers(); }, []);
+  useEffect(() => { loadUsers(); loadOrgs(); }, []);
 
   const isSuperAdmin = currentRole === "super_admin";
   const isAdmin = currentRole === "admin" || isSuperAdmin;
@@ -260,6 +270,125 @@ export default function SettingsPage() {
                 </tr>
               );
             })}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Supporting Organizations */}
+      <div className="bg-white rounded-xl border border-earth-100 shadow-sm overflow-hidden">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-earth-100">
+          <div className="flex items-center gap-2">
+            <Heart className="w-4 h-4 text-rose-500" />
+            <h2 className="font-semibold text-earth-900">Supporting Organizations</h2>
+          </div>
+          {isAdmin && (
+            <button
+              onClick={() => setShowAddOrg(!showAddOrg)}
+              className="inline-flex items-center gap-1.5 bg-garden-600 text-white px-3 py-1.5 rounded-lg text-sm font-medium hover:bg-garden-700 transition-colors"
+            >
+              <Plus className="w-4 h-4" />
+              Add Organization
+            </button>
+          )}
+        </div>
+
+        {showAddOrg && (
+          <div className="px-5 py-4 bg-garden-50 border-b border-earth-100 space-y-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <input
+                type="text"
+                placeholder="Organization name"
+                value={newOrgName}
+                onChange={(e) => setNewOrgName(e.target.value)}
+                className="px-3 py-2 rounded-lg border border-earth-200 text-sm"
+              />
+              <input
+                type="url"
+                placeholder="Logo URL (optional)"
+                value={newOrgLogo}
+                onChange={(e) => setNewOrgLogo(e.target.value)}
+                className="px-3 py-2 rounded-lg border border-earth-200 text-sm"
+              />
+            </div>
+            <div className="flex gap-2">
+              <button
+                onClick={async () => {
+                  if (!newOrgName.trim()) return;
+                  await fetch("/api/admin/organizations", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ name: newOrgName, logo_url: newOrgLogo || null }),
+                  });
+                  setNewOrgName("");
+                  setNewOrgLogo("");
+                  setShowAddOrg(false);
+                  loadOrgs();
+                }}
+                disabled={!newOrgName.trim()}
+                className="bg-garden-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-garden-700 disabled:opacity-50"
+              >
+                Add
+              </button>
+              <button
+                onClick={() => setShowAddOrg(false)}
+                className="bg-earth-100 text-earth-600 px-4 py-2 rounded-lg text-sm font-medium hover:bg-earth-200"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        )}
+
+        <table className="w-full text-sm">
+          <thead className="bg-earth-50 border-b border-earth-100">
+            <tr>
+              <th className="text-left px-5 py-3 font-medium text-earth-600">Logo</th>
+              <th className="text-left px-5 py-3 font-medium text-earth-600">Name</th>
+              <th className="text-left px-5 py-3 font-medium text-earth-600">Status</th>
+              {isSuperAdmin && (
+                <th className="text-left px-5 py-3 font-medium text-earth-600">Actions</th>
+              )}
+            </tr>
+          </thead>
+          <tbody>
+            {orgs.map((org) => (
+              <tr key={org.id} className="border-b border-earth-50 hover:bg-earth-50/50">
+                <td className="px-5 py-3">
+                  {org.logo_url ? (
+                    <img src={org.logo_url} alt={org.name} className="w-8 h-8 object-contain" />
+                  ) : (
+                    <div className="w-8 h-8 bg-earth-100 rounded flex items-center justify-center text-earth-400 text-xs">--</div>
+                  )}
+                </td>
+                <td className="px-5 py-3 font-medium">{org.name}</td>
+                <td className="px-5 py-3">
+                  <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
+                    org.active ? "bg-garden-100 text-garden-700" : "bg-earth-100 text-earth-500"
+                  }`}>
+                    {org.active ? "Active" : "Inactive"}
+                  </span>
+                </td>
+                {isSuperAdmin && (
+                  <td className="px-5 py-3">
+                    <button
+                      onClick={async () => {
+                        if (!confirm(`Deactivate ${org.name}? Historical order data will be preserved.`)) return;
+                        await fetch("/api/admin/organizations", {
+                          method: "DELETE",
+                          headers: { "Content-Type": "application/json" },
+                          body: JSON.stringify({ id: org.id }),
+                        });
+                        loadOrgs();
+                      }}
+                      className="text-earth-400 hover:text-rose-600 transition-colors"
+                      title="Deactivate"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </td>
+                )}
+              </tr>
+            ))}
           </tbody>
         </table>
       </div>

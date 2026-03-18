@@ -60,11 +60,21 @@ export async function GET() {
     catMap[catName].count += item.quantity;
   }
 
+  // Organization breakdown
+  const orgMap: Record<string, { count: number; total: number }> = {};
+  for (const o of orders) {
+    const orgName = o.organization || "Not specified";
+    if (!orgMap[orgName]) orgMap[orgName] = { count: 0, total: 0 };
+    orgMap[orgName].count++;
+    orgMap[orgName].total += o.subtotal_cents;
+  }
+
   return NextResponse.json({
     totalOrders,
     totalRevenue,
     paymentBreakdown: Object.entries(payMap).map(([method, data]) => ({ method, ...data })),
     topProducts: Object.values(prodMap).sort((a, b) => b.quantity - a.quantity).slice(0, 10),
     categorySales: Object.entries(catMap).map(([name, data]) => ({ name, ...data })).sort((a, b) => b.total - a.total),
+    organizationBreakdown: Object.entries(orgMap).map(([name, data]) => ({ name, ...data })).sort((a, b) => b.total - a.total),
   });
 }

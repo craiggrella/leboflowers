@@ -5,7 +5,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { items, customerName, customerEmail, customerPhone } = body;
+    const { items, customerName, customerEmail, customerPhone, organization } = body;
 
     if (!items?.length || !customerName || !customerEmail) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
@@ -56,6 +56,7 @@ export async function POST(req: NextRequest) {
       metadata: {
         customerName,
         customerPhone: customerPhone || "",
+        organization: organization || "",
         items: JSON.stringify(
           items.map((i: { sku: string; quantity: number }) => ({
             sku: i.sku,

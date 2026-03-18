@@ -9,6 +9,7 @@ interface ReportsData {
   paymentBreakdown: { method: string; count: number; total: number }[];
   topProducts: { sku: string; name: string; quantity: number; revenue: number }[];
   categorySales: { name: string; total: number; count: number }[];
+  organizationBreakdown: { name: string; count: number; total: number }[];
 }
 
 export default function ReportsPage() {
@@ -48,6 +49,26 @@ export default function ReportsPage() {
           <span className="text-sm text-earth-500">Completed Orders</span>
           <div className="text-2xl font-bold text-earth-900 mt-1">{data.totalOrders}</div>
         </div>
+      </div>
+
+      {/* Organization Breakdown */}
+      <div className="bg-white rounded-xl border border-garden-200 p-6 shadow-sm mb-8">
+        <h2 className="font-display text-lg font-bold text-earth-900 mb-4">Revenue by Organization</h2>
+        {data.organizationBreakdown.length === 0 ? (
+          <p className="text-earth-500 text-sm">No sales data yet.</p>
+        ) : (
+          <div className="space-y-4">
+            {data.organizationBreakdown.map((org) => (
+              <div key={org.name} className="flex justify-between items-center">
+                <div>
+                  <span className="text-earth-900 font-medium">{org.name}</span>
+                  <span className="text-earth-400 ml-2 text-sm">({org.count} orders)</span>
+                </div>
+                <span className="text-lg font-bold text-garden-700">{formatCurrency(org.total)}</span>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       <div className="grid md:grid-cols-2 gap-6">

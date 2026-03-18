@@ -12,16 +12,19 @@ export default function OrderDetailPage() {
   const id = params.id as string;
   const [order, setOrder] = useState<Order | null>(null);
   const [items, setItems] = useState<OrderItem[]>([]);
+  const [orgs, setOrgs] = useState<{ name: string }[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch(`/api/admin/orders?id=${id}`)
-      .then((r) => r.json())
-      .then((data) => {
-        setOrder(data.order as Order);
-        setItems((data.items as OrderItem[]) || []);
-        setLoading(false);
-      });
+    Promise.all([
+      fetch(`/api/admin/orders?id=${id}`).then((r) => r.json()),
+      fetch("/api/admin/organizations").then((r) => r.json()),
+    ]).then(([orderData, orgData]) => {
+      setOrder(orderData.order as Order);
+      setItems((orderData.items as OrderItem[]) || []);
+      setOrgs(orgData.organizations || []);
+      setLoading(false);
+    });
   }, [id]);
 
   const handlePrint = () => window.open(`/api/admin/orders/print?id=${id}`, "_blank");
@@ -33,6 +36,15 @@ export default function OrderDetailPage() {
       body: JSON.stringify({ id, status: newStatus }),
     });
     setOrder((prev) => prev ? { ...prev, status: newStatus as Order["status"] } : prev);
+  };
+
+  const handleOrgChange = async (newOrg: string) => {
+    await fetch("/api/admin/orders", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id, organization: newOrg || null }),
+    });
+    setOrder((prev) => prev ? { ...prev, organization: newOrg || null } : prev);
   };
 
   if (loading) return <div className="text-earth-500">Loading...</div>;
@@ -77,6 +89,19 @@ export default function OrderDetailPage() {
             <p><strong>Date:</strong> {new Date(order.created_at).toLocaleString()}</p>
             <p><strong>Payment:</strong> {order.payment_method.replace(/_/g, " ")}{order.check_number ? ` #${order.check_number}` : ""}</p>
             <p><strong>Source:</strong> {order.source.replace(/_/g, " ")}</p>
+            <div className="flex items-center gap-2 mt-1">
+              <strong>Organization:</strong>
+              <select
+                value={order.organization || ""}
+                onChange={(e) => handleOrgChange(e.target.value)}
+                className="border border-earth-200 rounded px-2 py-1 text-sm"
+              >
+                <option value="">Not specified</option>
+                {orgs.map((org) => (
+                  <option key={org.name} value={org.name}>{org.name}</option>
+                ))}
+              </select>
+            </div>
             <div className="flex items-center gap-2 mt-2 print:hidden">
               <strong>Status:</strong>
               <select

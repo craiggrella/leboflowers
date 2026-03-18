@@ -27,6 +27,7 @@ export async function POST(req: NextRequest) {
     const customerName = session.metadata?.customerName || "Unknown";
     const customerEmail = session.customer_email || "";
     const customerPhone = session.metadata?.customerPhone || "";
+    const organization = session.metadata?.organization || null;
     const subtotalCents = session.amount_total || 0;
 
     const { data: order, error: orderError } = await supabase
@@ -41,6 +42,7 @@ export async function POST(req: NextRequest) {
         stripe_payment_intent: session.payment_intent as string,
         payment_method: "online_card",
         source: "online",
+        organization,
       })
       .select()
       .single();
@@ -88,6 +90,7 @@ export async function POST(req: NextRequest) {
           quantity: i.quantity,
         })),
         totalCents: subtotalCents,
+        organization: organization || undefined,
         paymentMethod: "online_card",
         createdAt: new Date().toISOString(),
       }).catch((err) => console.error("Receipt email failed:", err));

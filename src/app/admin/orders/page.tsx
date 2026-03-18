@@ -85,7 +85,7 @@ function OrdersContent() {
               <th className="text-left px-4 py-3 font-medium text-earth-600">Status</th>
               <th className="text-left px-4 py-3 font-medium text-earth-600">Total</th>
               <th className="text-left px-4 py-3 font-medium text-earth-600">Payment</th>
-              <th className="text-left px-4 py-3 font-medium text-earth-600">Source</th>
+              <th className="text-left px-4 py-3 font-medium text-earth-600">Organization</th>
               <th className="text-left px-4 py-3 font-medium text-earth-600">Date</th>
               <th className="text-left px-4 py-3 font-medium text-earth-600">Actions</th>
             </tr>
@@ -117,7 +117,7 @@ function OrdersContent() {
                   {order.payment_method.replace(/_/g, " ")}
                   {order.check_number && ` #${order.check_number}`}
                 </td>
-                <td className="px-4 py-3 text-earth-500 capitalize">{order.source.replace(/_/g, " ")}</td>
+                <td className="px-4 py-3 text-earth-500 text-xs">{order.organization || "—"}</td>
                 <td className="px-4 py-3 text-earth-500">
                   {new Date(order.created_at).toLocaleDateString()}
                 </td>

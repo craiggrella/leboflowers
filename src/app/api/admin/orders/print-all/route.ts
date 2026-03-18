@@ -92,6 +92,12 @@ export async function GET(req: NextRequest) {
           ${order.customer_phone ? `<p style="margin:1px 0;font-size:11px;color:#6b5744">${order.customer_phone}</p>` : ""}
         </div>
 
+        ${order.organization ? `
+        <div style="background:#f0fdf4;border:2px solid #16a34a;border-radius:8px;padding:10px;margin-bottom:12px;text-align:center">
+          <p style="margin:0;font-size:10px;color:#6b5744;text-transform:uppercase;letter-spacing:1px">Supporting</p>
+          <p style="margin:2px 0 0;font-size:14px;font-weight:700;color:#166534">${order.organization}</p>
+        </div>` : ""}
+
         <table style="width:100%;border-collapse:collapse;margin-bottom:12px">
           <thead>
             <tr style="background:#166534;color:white">

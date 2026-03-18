@@ -48,6 +48,7 @@ export interface Order {
   payment_method: PaymentMethod;
   source: OrderSource;
   check_number: string | null;
+  organization: string | null;
   notes: string | null;
   created_at: string;
   order_items?: OrderItem[];

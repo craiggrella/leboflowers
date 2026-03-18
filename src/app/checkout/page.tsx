@@ -4,9 +4,10 @@ import { useState } from "react";
 import { PayPalScriptProvider, PayPalButtons } from "@paypal/react-paypal-js";
 import { useCart } from "@/context/CartContext";
 import { formatCurrency } from "@/lib/utils";
-import { ArrowLeft, Lock } from "lucide-react";
+import { ArrowLeft, Lock, Heart } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useEffect } from "react";
 
 const paypalClientId = process.env.NEXT_PUBLIC_PAYPAL_CLIENT_ID;
 const stripeEnabled = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY && process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY !== "pk_test_placeholder";
@@ -16,11 +17,19 @@ export default function CheckoutPage() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
+  const [organization, setOrganization] = useState("");
+  const [orgs, setOrgs] = useState<{ id: string; name: string; slug: string; logo_url: string | null }[]>([]);
   const [error, setError] = useState("");
   const [stripeLoading, setStripeLoading] = useState(false);
   const router = useRouter();
 
-  const customerInfoValid = name.trim() && email.trim();
+  useEffect(() => {
+    fetch("/api/organizations")
+      .then((r) => r.json())
+      .then((data) => setOrgs(data.organizations || []));
+  }, []);
+
+  const customerInfoValid = name.trim() && email.trim() && organization;
 
   const cartPayload = items.map((i) => ({
     productId: i.productId,
@@ -43,6 +52,7 @@ export default function CheckoutPage() {
           customerName: name,
           customerEmail: email,
           customerPhone: phone,
+          organization,
         }),
       });
       const data = await res.json();
@@ -150,9 +160,43 @@ export default function CheckoutPage() {
         </div>
       </div>
 
+      {/* Organization selection */}
+      <div className="mb-8">
+        <label className="block text-sm font-medium text-earth-700 mb-3">
+          <Heart className="w-4 h-4 inline mr-1 text-rose-500" />
+          Which organization are you supporting? *
+        </label>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          {orgs.map((org) => (
+            <button
+              key={org.slug}
+              type="button"
+              onClick={() => setOrganization(org.name)}
+              className={`p-4 rounded-xl border-2 text-center transition-all ${
+                organization === org.name
+                  ? "border-garden-500 bg-garden-50 shadow-md ring-2 ring-garden-200"
+                  : "border-earth-200 bg-white hover:border-earth-300"
+              }`}
+            >
+              {org.logo_url && (
+                <img src={org.logo_url} alt={org.name} className="w-12 h-12 object-contain mx-auto mb-2" />
+              )}
+              <span className={`text-sm font-semibold block ${
+                organization === org.name ? "text-garden-700" : "text-earth-700"
+              }`}>
+                {org.name}
+              </span>
+            </button>
+          ))}
+        </div>
+        {!organization && (
+          <p className="text-xs text-earth-400 mt-2">Please select an organization to continue.</p>
+        )}
+      </div>
+
       {!customerInfoValid && (
         <div className="bg-sunshine-50 border border-sunshine-200 text-earth-700 px-4 py-3 rounded-lg text-sm mb-6">
-          Please fill in your name and email above to continue with payment.
+          Please fill in your name, email, and select an organization to continue with payment.
         </div>
       )}
 
@@ -183,6 +227,7 @@ export default function CheckoutPage() {
                         customerName: name,
                         customerEmail: email,
                         customerPhone: phone,
+                        organization,
                       }),
                     });
                     const data = await res.json();
@@ -198,6 +243,7 @@ export default function CheckoutPage() {
                         customerName: name,
                         customerEmail: email,
                         customerPhone: phone,
+                        organization,
                         items: cartPayload,
                       }),
                     });
