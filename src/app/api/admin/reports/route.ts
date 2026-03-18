@@ -1,7 +1,11 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { getAdminUser } from "@/lib/admin-auth";
 
 export async function GET() {
+  const admin = await getAdminUser();
+  if (!admin) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
   const supabase = createAdminClient();
 
   const [ordersRes, itemsRes] = await Promise.all([
@@ -11,16 +15,12 @@ export async function GET() {
 
   const orders = ordersRes.data || [];
   const allItems = itemsRes.data || [];
-
-  // Filter items to only those belonging to paid/fulfilled orders
   const paidOrderIds = new Set(orders.map((o) => o.id));
   const items = allItems.filter((i) => paidOrderIds.has(i.order_id));
 
-  // Total stats
   const totalOrders = orders.length;
   const totalRevenue = orders.reduce((sum, o) => sum + o.subtotal_cents, 0);
 
-  // Payment breakdown
   const payMap: Record<string, { count: number; total: number }> = {};
   for (const o of orders) {
     const m = o.payment_method || "unknown";
@@ -29,7 +29,6 @@ export async function GET() {
     payMap[m].total += o.subtotal_cents;
   }
 
-  // Top products by quantity
   const prodMap: Record<string, { sku: string; name: string; quantity: number; revenue: number }> = {};
   for (const item of items) {
     if (!prodMap[item.sku]) {
@@ -39,7 +38,6 @@ export async function GET() {
     prodMap[item.sku].revenue += item.price_cents * item.quantity;
   }
 
-  // Category sales (lookup by product_id)
   const productIds = [...new Set(items.filter((i) => i.product_id).map((i) => i.product_id))];
   const { data: products } = await supabase
     .from("products")

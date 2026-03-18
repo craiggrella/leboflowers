@@ -1,8 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { getAdminUser } from "@/lib/admin-auth";
 import QRCode from "qrcode";
 
 export async function GET(req: NextRequest) {
+  const admin = await getAdminUser();
+  if (!admin) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const orderId = req.nextUrl.searchParams.get("id");
   if (!orderId) {
     return NextResponse.json({ error: "Missing order ID" }, { status: 400 });

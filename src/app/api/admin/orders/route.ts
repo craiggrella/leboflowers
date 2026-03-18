@@ -1,9 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { getAdminUser, canWrite } from "@/lib/admin-auth";
 
 export async function GET(req: NextRequest) {
-  const supabase = createAdminClient();
+  const admin = await getAdminUser();
+  if (!admin) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
+  const supabase = createAdminClient();
   const orderId = req.nextUrl.searchParams.get("id");
 
   if (orderId) {
@@ -19,15 +22,21 @@ export async function GET(req: NextRequest) {
     .select("*")
     .order("created_at", { ascending: false });
 
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
-  }
-
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   return NextResponse.json({ orders: data });
 }
 
 export async function PATCH(req: NextRequest) {
+  const admin = await getAdminUser();
+  if (!admin) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
   const { id, status } = await req.json();
+
+  // Volunteers can only mark as fulfilled (QR scan), nothing else
+  if (!canWrite(admin.role) && status !== "fulfilled") {
+    return NextResponse.json({ error: "Read-only access" }, { status: 403 });
+  }
+
   const supabase = createAdminClient();
   const { error } = await supabase.from("orders").update({ status }).eq("id", id);
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });

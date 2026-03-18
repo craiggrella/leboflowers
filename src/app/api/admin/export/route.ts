@@ -1,10 +1,13 @@
 import { NextResponse } from "next/server";
 import ExcelJS from "exceljs";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { products, categories } from "@/lib/data";
+import { getAdminUser } from "@/lib/admin-auth";
 
 export async function GET() {
   try {
+    const admin = await getAdminUser();
+    if (!admin) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
     const supabase = createAdminClient();
 
     // Fetch all paid/fulfilled order items
@@ -47,13 +50,17 @@ export async function GET() {
     };
     sheet.getRow(1).font = { bold: true, color: { argb: "FFFFFFFF" } };
 
+    // Fetch products and categories from DB
+    const { data: dbProducts } = await supabase.from("products").select("*").order("category_id").order("sort_order");
+    const { data: dbCategories } = await supabase.from("categories").select("*");
+
     // Add all products (even zero-quantity ones for completeness)
     let grandTotal = 0;
-    for (const product of products) {
+    for (const product of (dbProducts || [])) {
       const qty = skuTotals[product.sku] || 0;
       const lineTotal = qty * product.price_cents / 100;
       grandTotal += lineTotal;
-      const cat = categories.find((c) => c.id === product.category_id);
+      const cat = (dbCategories || []).find((c: { id: string; name: string }) => c.id === product.category_id);
 
       sheet.addRow({
         sku: product.sku,

@@ -1,9 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { getAdminUser, canWrite } from "@/lib/admin-auth";
 
 export async function GET() {
-  const supabase = createAdminClient();
+  const admin = await getAdminUser();
+  if (!admin) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
+  const supabase = createAdminClient();
   const [prodsRes, catsRes] = await Promise.all([
     supabase.from("products").select("*").order("category_id").order("sort_order"),
     supabase.from("categories").select("*").order("sort_order"),
@@ -16,6 +19,10 @@ export async function GET() {
 }
 
 export async function PATCH(req: NextRequest) {
+  const admin = await getAdminUser();
+  if (!admin) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!canWrite(admin.role)) return NextResponse.json({ error: "Read-only access" }, { status: 403 });
+
   const { id, ...updates } = await req.json();
   const supabase = createAdminClient();
   const { error } = await supabase.from("products").update(updates).eq("id", id);

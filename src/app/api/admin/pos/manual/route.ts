@@ -1,8 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { getAdminUser, canWrite } from "@/lib/admin-auth";
 
 export async function POST(req: NextRequest) {
   try {
+    const admin = await getAdminUser();
+    if (!admin) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    if (!canWrite(admin.role)) return NextResponse.json({ error: "Read-only access" }, { status: 403 });
+
     const { customerName, paymentMethod, checkNumber, items } = await req.json();
 
     if (!customerName || !items?.length || !paymentMethod) {
