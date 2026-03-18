@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { formatCurrency } from "@/lib/utils";
+import { formatCurrency, formatPhone } from "@/lib/utils";
 import { useRouter } from "next/navigation";
 import type { Product, Category } from "@/types";
 import { FileText, Plus, Minus, Trash2, Search, ArrowLeft } from "lucide-react";
@@ -215,9 +215,9 @@ export default function PosManualPage() {
               <input
                 type="tel"
                 value={customerPhone}
-                onChange={(e) => setCustomerPhone(e.target.value)}
+                onChange={(e) => setCustomerPhone(formatPhone(e.target.value))}
                 className="w-full px-3 py-2 rounded-lg border border-earth-200 text-sm focus:ring-2 focus:ring-garden-400 focus:border-transparent"
-                placeholder="(412) 555-0123"
+                placeholder="412-555-0123"
               />
             </div>
 

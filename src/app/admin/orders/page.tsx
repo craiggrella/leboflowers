@@ -94,12 +94,7 @@ function OrdersContent() {
             {filtered.map((order) => (
               <tr key={order.id} className="border-b border-earth-50 hover:bg-earth-50/50">
                 <td className="px-4 py-3 font-mono">{order.order_number}</td>
-                <td className="px-4 py-3">
-                  <div>{order.customer_name}</div>
-                  {order.customer_email && (
-                    <div className="text-xs text-earth-400">{order.customer_email}</div>
-                  )}
-                </td>
+                <td className="px-4 py-3">{order.customer_name}</td>
                 <td className="px-4 py-3">
                   <span
                     className={`px-2 py-0.5 rounded-full text-xs font-medium capitalize ${

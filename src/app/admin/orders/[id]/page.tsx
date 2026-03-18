@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { ArrowLeft, Printer } from "lucide-react";
-import { formatCurrency } from "@/lib/utils";
+import { formatCurrency, formatPhone } from "@/lib/utils";
 import Link from "next/link";
 import type { Order, OrderItem } from "@/types";
 
@@ -79,7 +79,7 @@ export default function OrderDetailPage() {
           <div className="space-y-1 text-sm text-earth-700">
             <p><strong>Name:</strong> {order.customer_name}</p>
             {order.customer_email && <p><strong>Email:</strong> {order.customer_email}</p>}
-            {order.customer_phone && <p><strong>Phone:</strong> {order.customer_phone}</p>}
+            {order.customer_phone && <p><strong>Phone:</strong> {formatPhone(order.customer_phone)}</p>}
           </div>
         </div>
 
