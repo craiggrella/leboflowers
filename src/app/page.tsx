@@ -29,8 +29,8 @@ export default async function Home() {
             Mt. Lebanon<br />Flower Sale
           </h1>
           <p className="text-lg md:text-xl text-garden-100 max-w-2xl mx-auto mb-8 leading-relaxed">
-            Beautiful flowers from Dean&apos;s Greenhouse supporting our local church
-            and swimming club. Every purchase makes our community bloom!
+            Beautiful flowers from Dean&apos;s Greenhouse supporting Mt Lebanon
+            nonprofit organizations. Every purchase makes our community bloom!
           </p>
           <div className="flex flex-wrap justify-center gap-4">
             <a
@@ -56,7 +56,7 @@ export default async function Home() {
             Growing Something Beautiful Together
           </h2>
           <p className="text-earth-700 leading-relaxed">
-            100% of proceeds from this flower sale support our nonprofit community organizations.
+            Proceeds stay in and support Mt Lebanon community organizations.
             All plants are provided by <strong>Dean&apos;s Greenhouse</strong> — a trusted local grower.
             Thank you for helping our neighborhood bloom!
           </p>

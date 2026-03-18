@@ -29,7 +29,7 @@ export default function SiteFooter() {
           <div>
             <h3 className="font-display text-white font-semibold mb-3">About This Sale</h3>
             <p className="text-garden-200 text-sm leading-relaxed">
-              100% of proceeds support our nonprofit community organizations.
+              Proceeds stay in and support Mt Lebanon community organizations.
               Thank you for helping us grow something beautiful together!
             </p>
           </div>
