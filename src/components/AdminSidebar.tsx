@@ -63,13 +63,15 @@ export default function AdminSidebar() {
       </nav>
 
       <div className="border-t border-earth-700 pt-4 mt-4 space-y-1">
-        <Link
+        <a
           href="/"
+          target="_blank"
+          rel="noopener noreferrer"
           onClick={() => setOpen(false)}
           className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-earth-400 hover:bg-earth-800 hover:text-earth-200 transition-colors"
         >
           View Store
-        </Link>
+        </a>
         <button
           onClick={handleLogout}
           className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-earth-400 hover:bg-earth-800 hover:text-earth-200 transition-colors w-full"
