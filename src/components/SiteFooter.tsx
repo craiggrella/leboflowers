@@ -13,7 +13,7 @@ export default function SiteFooter() {
               </span>
             </div>
             <p className="text-garden-200 text-sm leading-relaxed">
-              A community fundraiser supporting our local church and swimming club.
+              A community fundraiser supporting Mt Lebanon Nonprofits.
               All flowers provided by Dean&apos;s Greenhouse.
             </p>
           </div>
