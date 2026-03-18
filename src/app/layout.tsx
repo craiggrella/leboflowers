@@ -18,7 +18,7 @@ const playfair = Playfair_Display({
 export const metadata: Metadata = {
   title: "Mt. Lebanon Flower Sale | Community Fundraiser",
   description:
-    "Support our community! Shop beautiful flowers from Dean's Greenhouse. All proceeds benefit our local church and swimming club.",
+    "Support our community! Shop beautiful flowers from Dean's Greenhouse supporting Mt Lebanon nonprofit organizations.",
 };
 
 export default function RootLayout({

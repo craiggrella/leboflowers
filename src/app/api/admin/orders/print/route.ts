@@ -174,7 +174,7 @@ export async function GET(req: NextRequest) {
 
     <!-- Footer -->
     <div style="text-align: center; margin-top: 40px; padding-top: 16px; border-top: 1px solid #e2d5c5; color: #6b5744; font-size: 12px;">
-      <p>Thank you for supporting our community! All proceeds benefit our local church and swimming club.</p>
+      <p>Proceeds stay in Mt Lebanon and support community organizations. Thank you for helping us grow something beautiful together!</p>
     </div>
   </div>
 </body>
