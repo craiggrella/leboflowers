@@ -172,20 +172,27 @@ export default function CheckoutPage() {
               key={org.slug}
               type="button"
               onClick={() => setOrganization(org.name)}
-              className={`p-4 rounded-xl border-2 text-center transition-all ${
+              className={`relative rounded-xl border-2 overflow-hidden transition-all aspect-square ${
                 organization === org.name
-                  ? "border-garden-500 bg-garden-50 shadow-md ring-2 ring-garden-200"
-                  : "border-earth-200 bg-white hover:border-earth-300"
+                  ? "border-garden-500 shadow-lg ring-2 ring-garden-200"
+                  : "border-earth-200 hover:border-earth-300"
               }`}
             >
-              {org.logo_url && (
-                <img src={org.logo_url} alt={org.name} className="w-12 h-12 object-contain mx-auto mb-2" />
+              {org.logo_url ? (
+                <img src={org.logo_url} alt={org.name} className="absolute inset-0 w-full h-full object-cover" />
+              ) : (
+                <div className="absolute inset-0 bg-earth-100" />
               )}
-              <span className={`text-sm font-semibold block ${
-                organization === org.name ? "text-garden-700" : "text-earth-700"
-              }`}>
-                {org.name}
-              </span>
+              <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 via-black/40 to-transparent pt-10 pb-3 px-3">
+                <span className="text-white text-sm font-bold drop-shadow-lg block text-center">
+                  {org.name}
+                </span>
+              </div>
+              {organization === org.name && (
+                <div className="absolute top-2 right-2 bg-garden-500 text-white rounded-full p-1">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>
+                </div>
+              )}
             </button>
           ))}
         </div>
