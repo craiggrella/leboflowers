@@ -125,7 +125,7 @@ export async function sendOrderReceipt(data: OrderReceiptData) {
       </div>
 
       <p style="font-size:14px;color:#6b5744;line-height:1.6">
-        Proceeds stay in and support Mt Lebanon community organizations. Thank you for helping us grow something beautiful together!
+        Proceeds stay in Mt Lebanon and support community organizations. Thank you for helping us grow something beautiful together!
       </p>
     </div>
 

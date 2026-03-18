@@ -56,7 +56,7 @@ export default async function Home() {
             Growing Something Beautiful Together
           </h2>
           <p className="text-earth-700 leading-relaxed">
-            Proceeds stay in and support Mt Lebanon community organizations.
+            Proceeds stay in Mt Lebanon and support community organizations.
             All plants are provided by <strong>Dean&apos;s Greenhouse</strong> — a trusted local grower.
             Thank you for helping our neighborhood bloom!
           </p>
