@@ -40,7 +40,7 @@ export default function AdminSidebar() {
         </div>
       </div>
 
-      <nav className="flex-1 space-y-1">
+      <nav className="space-y-1">
         {navItems.map((item) => {
           const isActive = pathname === item.href;
           return (
@@ -107,7 +107,7 @@ export default function AdminSidebar() {
       </aside>
 
       {/* Desktop sidebar */}
-      <aside className="hidden lg:flex w-64 bg-earth-900 text-earth-200 min-h-screen p-4 flex-col">
+      <aside className="hidden lg:block w-64 bg-earth-900 text-earth-200 min-h-screen p-4">
         {sidebarContent}
       </aside>
     </>
