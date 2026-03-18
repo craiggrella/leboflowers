@@ -37,7 +37,7 @@ export default function SiteFooter() {
 
         <div className="border-t border-garden-700 mt-8 pt-6 text-center text-sm text-garden-300">
           <p className="flex items-center justify-center gap-1">
-            Made with <Heart className="w-4 h-4 text-rose-400 fill-rose-400" /> by our community
+            Made with <Heart className="w-4 h-4 text-rose-400 fill-rose-400" /> by Craig Grella
           </p>
           <p className="mt-1">&copy; {new Date().getFullYear()} Mt. Lebanon Flower Sale</p>
         </div>
