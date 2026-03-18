@@ -2,9 +2,10 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, ShoppingBag, Package, BarChart3, LogOut } from "lucide-react";
+import { LayoutDashboard, ShoppingBag, Package, BarChart3, LogOut, Menu, X } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
+import { useState } from "react";
 import { cn } from "@/lib/utils";
 
 const navItems = [
@@ -17,6 +18,7 @@ const navItems = [
 export default function AdminSidebar() {
   const pathname = usePathname();
   const router = useRouter();
+  const [open, setOpen] = useState(false);
 
   const handleLogout = async () => {
     const supabase = createClient();
@@ -24,11 +26,18 @@ export default function AdminSidebar() {
     router.push("/login");
   };
 
-  return (
-    <aside className="w-64 bg-earth-900 text-earth-200 min-h-screen p-4 flex flex-col">
+  const sidebarContent = (
+    <>
       <div className="mb-8">
-        <h2 className="font-display text-lg font-bold text-white">Admin Panel</h2>
-        <p className="text-xs text-earth-400">Mt. Lebanon Flower Sale</p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="font-display text-lg font-bold text-white">Admin Panel</h2>
+            <p className="text-xs text-earth-400">Mt. Lebanon Flower Sale</p>
+          </div>
+          <button onClick={() => setOpen(false)} className="lg:hidden text-earth-400 hover:text-white">
+            <X className="w-5 h-5" />
+          </button>
+        </div>
       </div>
 
       <nav className="flex-1 space-y-1">
@@ -38,6 +47,7 @@ export default function AdminSidebar() {
             <Link
               key={item.href}
               href={item.href}
+              onClick={() => setOpen(false)}
               className={cn(
                 "flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors",
                 isActive
@@ -55,6 +65,7 @@ export default function AdminSidebar() {
       <div className="border-t border-earth-700 pt-4 mt-4 space-y-1">
         <Link
           href="/"
+          onClick={() => setOpen(false)}
           className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-earth-400 hover:bg-earth-800 hover:text-earth-200 transition-colors"
         >
           View Store
@@ -67,6 +78,38 @@ export default function AdminSidebar() {
           Sign Out
         </button>
       </div>
-    </aside>
+    </>
+  );
+
+  return (
+    <>
+      {/* Mobile toggle button */}
+      <button
+        onClick={() => setOpen(true)}
+        className="lg:hidden fixed top-[1.1rem] right-4 z-50 bg-earth-900 text-white p-2 rounded-lg shadow-lg"
+      >
+        <Menu className="w-5 h-5" />
+      </button>
+
+      {/* Mobile overlay */}
+      {open && (
+        <div className="lg:hidden fixed inset-0 z-40 bg-black/50" onClick={() => setOpen(false)} />
+      )}
+
+      {/* Mobile sidebar */}
+      <aside
+        className={cn(
+          "lg:hidden fixed inset-y-0 left-0 z-50 w-64 bg-earth-900 text-earth-200 p-4 flex flex-col transform transition-transform duration-200",
+          open ? "translate-x-0" : "-translate-x-full"
+        )}
+      >
+        {sidebarContent}
+      </aside>
+
+      {/* Desktop sidebar */}
+      <aside className="hidden lg:flex w-64 bg-earth-900 text-earth-200 min-h-screen p-4 flex-col">
+        {sidebarContent}
+      </aside>
+    </>
   );
 }

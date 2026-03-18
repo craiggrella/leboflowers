@@ -61,7 +61,7 @@ function FulfillContent() {
 
   if (!id) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-6">
+      <div className="flex items-center justify-center p-8">
         <p className="text-earth-500">No order ID provided.</p>
       </div>
     );
@@ -69,7 +69,7 @@ function FulfillContent() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-6">
+      <div className="flex items-center justify-center p-8">
         <p className="text-earth-500">Loading order...</p>
       </div>
     );
@@ -77,86 +77,76 @@ function FulfillContent() {
 
   if (!order) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-6">
+      <div className="flex items-center justify-center p-8">
         <p className="text-earth-500">Order not found.</p>
       </div>
     );
   }
 
   return (
-    <div className="max-w-md mx-auto p-6">
+    <div className="max-w-md mx-auto">
       {/* Header */}
-      <div className="text-center mb-6">
-        <Flower2 className="w-10 h-10 text-rose-500 mx-auto mb-2" />
-        <h1 className="font-display text-xl font-bold text-earth-900">Mt. Lebanon Flower Sale</h1>
-        <p className="text-earth-500 text-xs">Order Fulfillment</p>
+      <div className="text-center mb-5">
+        <Flower2 className="w-8 h-8 text-rose-500 mx-auto mb-1" />
+        <p className="text-earth-500 text-xs uppercase tracking-wider font-medium">Order Fulfillment</p>
       </div>
 
-      {/* Order Card */}
-      <div className="bg-white rounded-2xl border border-earth-200 shadow-md overflow-hidden">
-        <div className="bg-garden-700 text-white px-5 py-4">
-          <div className="flex justify-between items-center">
-            <h2 className="text-lg font-bold">Order #{order.order_number}</h2>
-            <span className={`px-3 py-1 rounded-full text-xs font-bold ${
-              fulfilled ? "bg-white/20" : "bg-sunshine-400 text-earth-900"
-            }`}>
-              {fulfilled ? "Fulfilled" : order.status}
-            </span>
+      {/* Big order number + customer */}
+      <div className="text-center mb-6">
+        <h1 className="font-display text-4xl font-bold text-earth-900">#{order.order_number}</h1>
+        <p className="text-xl text-earth-700 mt-1">{order.customer_name}</p>
+        {order.customer_phone && (
+          <p className="text-sm text-earth-500 mt-0.5">{order.customer_phone}</p>
+        )}
+      </div>
+
+      {/* Fulfill Button — THE FOCUS */}
+      <div className="mb-6">
+        {error && (
+          <div className="bg-rose-50 border border-rose-200 text-rose-700 px-4 py-2 rounded-lg text-sm mb-3">
+            {error}
           </div>
-          <p className="text-garden-100 text-sm mt-1">{order.customer_name}</p>
+        )}
+
+        {fulfilled ? (
+          <div className="flex flex-col items-center justify-center gap-3 bg-garden-50 border-2 border-garden-300 text-garden-700 px-6 py-8 rounded-2xl text-center">
+            <CheckCircle className="w-12 h-12" />
+            <span className="font-bold text-2xl">Fulfilled!</span>
+            <span className="text-sm text-garden-600">This order has been picked up.</span>
+          </div>
+        ) : (
+          <button
+            onClick={handleFulfill}
+            disabled={fulfilling}
+            className="w-full flex items-center justify-center gap-3 bg-rose-600 hover:bg-rose-700 active:bg-rose-800 text-white font-bold py-6 rounded-2xl text-xl transition-colors disabled:opacity-50 shadow-lg shadow-rose-200"
+          >
+            <Package className="w-7 h-7" />
+            {fulfilling ? "Updating..." : "Mark as Fulfilled"}
+          </button>
+        )}
+      </div>
+
+      {/* Order details below the button */}
+      <div className="bg-white rounded-xl border border-earth-200 shadow-sm overflow-hidden">
+        <div className="px-4 py-3 bg-earth-50 border-b border-earth-200 flex justify-between items-center">
+          <span className="text-sm font-medium text-earth-700">Order Items</span>
+          <span className="text-sm font-bold text-garden-700">{formatCurrency(order.subtotal_cents)}</span>
         </div>
-
-        <div className="p-5">
-          {/* Items */}
-          <div className="space-y-2 mb-4">
-            {items.map((item) => (
-              <div key={item.id} className="flex justify-between text-sm">
-                <span className="text-earth-700">
-                  <span className="font-mono text-xs text-earth-400 mr-1">{item.sku}</span>
-                  {item.product_name} x{item.quantity}
-                </span>
-                <span className="font-medium">{formatCurrency(item.price_cents * item.quantity)}</span>
-              </div>
-            ))}
-          </div>
-
-          <div className="border-t border-earth-200 pt-3 flex justify-between font-bold text-earth-900">
-            <span>Total</span>
-            <span className="text-garden-700">{formatCurrency(order.subtotal_cents)}</span>
-          </div>
-
-          {/* Contact */}
-          {(order.customer_email || order.customer_phone) && (
-            <div className="mt-4 text-xs text-earth-500 space-y-0.5">
-              {order.customer_email && <p>{order.customer_email}</p>}
-              {order.customer_phone && <p>{order.customer_phone}</p>}
+        <div className="p-4 space-y-2">
+          {items.map((item) => (
+            <div key={item.id} className="flex justify-between text-sm">
+              <span className="text-earth-700">
+                <span className="font-mono text-xs text-earth-400 mr-1">{item.sku}</span>
+                {item.product_name}
+                <span className="text-earth-400"> x{item.quantity}</span>
+              </span>
+              <span className="font-medium text-earth-900">{formatCurrency(item.price_cents * item.quantity)}</span>
             </div>
-          )}
+          ))}
         </div>
-
-        {/* Fulfill Button */}
-        <div className="px-5 pb-5">
-          {error && (
-            <div className="bg-rose-50 border border-rose-200 text-rose-700 px-4 py-2 rounded-lg text-sm mb-3">
-              {error}
-            </div>
-          )}
-
-          {fulfilled ? (
-            <div className="flex items-center justify-center gap-2 bg-garden-50 border border-garden-200 text-garden-700 px-4 py-4 rounded-xl text-center">
-              <CheckCircle className="w-6 h-6" />
-              <span className="font-semibold text-lg">Order Fulfilled!</span>
-            </div>
-          ) : (
-            <button
-              onClick={handleFulfill}
-              disabled={fulfilling}
-              className="w-full flex items-center justify-center gap-2 bg-garden-600 hover:bg-garden-700 text-white font-bold py-4 rounded-xl text-lg transition-colors disabled:opacity-50"
-            >
-              <Package className="w-5 h-5" />
-              {fulfilling ? "Updating..." : "Mark as Fulfilled"}
-            </button>
-          )}
+        <div className="px-4 py-3 bg-earth-50 border-t border-earth-200 text-xs text-earth-500 space-y-0.5">
+          <p>Payment: {order.payment_method.replace(/_/g, " ")}{order.check_number ? ` #${order.check_number}` : ""}</p>
+          <p>Date: {new Date(order.created_at).toLocaleDateString()}</p>
         </div>
       </div>
     </div>
