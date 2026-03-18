@@ -58,7 +58,7 @@ UPDATE products SET category_id = 'd0000001-0000-0000-0000-000000000008'
 WHERE category_id = 'c0000001-0000-0000-0000-000000000016';
 
 -- Delete old categories (products have been remapped)
-DELETE FROM categories WHERE id LIKE 'c0000001%';
+DELETE FROM categories WHERE id::text LIKE 'c0000001%';
 
 -- Rename new categories to clean slugs
 UPDATE categories SET slug = 'geraniums' WHERE id = 'd0000001-0000-0000-0000-000000000002';
