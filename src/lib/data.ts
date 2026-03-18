@@ -2,22 +2,14 @@ import type { Category, Product } from "@/types";
 
 // Static data for development — replace with Supabase queries when connected
 export const categories: Category[] = [
-  { id: "c0000001-0000-0000-0000-000000000001", name: "Begonias", slug: "begonias", sort_order: 1 },
-  { id: "c0000001-0000-0000-0000-000000000002", name: "Impatiens", slug: "impatiens", sort_order: 2 },
-  { id: "c0000001-0000-0000-0000-000000000003", name: "Marigolds", slug: "marigolds", sort_order: 3 },
-  { id: "c0000001-0000-0000-0000-000000000004", name: "Petunias", slug: "petunias", sort_order: 4 },
-  { id: "c0000001-0000-0000-0000-000000000005", name: "Other Annual Flats", slug: "other-annual-flats", sort_order: 5 },
-  { id: "c0000001-0000-0000-0000-000000000006", name: "Vegetables & Herbs", slug: "vegetables-herbs", sort_order: 6 },
-  { id: "c0000001-0000-0000-0000-000000000007", name: "Fillers & Accents", slug: "fillers-accents", sort_order: 7 },
-  { id: "c0000001-0000-0000-0000-000000000008", name: "Wave Petunias", slug: "wave-petunias", sort_order: 8 },
-  { id: "c0000001-0000-0000-0000-000000000009", name: "Sunpatiens", slug: "sunpatiens", sort_order: 9 },
-  { id: "c0000001-0000-0000-0000-000000000010", name: "Sweet Potato Vines", slug: "sweet-potato-vines", sort_order: 10 },
-  { id: "c0000001-0000-0000-0000-000000000011", name: "Calibrachoa & Specialty", slug: "calibrachoa-specialty", sort_order: 11 },
-  { id: "c0000001-0000-0000-0000-000000000012", name: "Tuberous Begonias", slug: "tuberous-begonias", sort_order: 12 },
-  { id: "c0000001-0000-0000-0000-000000000013", name: "Geraniums", slug: "geraniums", sort_order: 13 },
-  { id: "c0000001-0000-0000-0000-000000000014", name: "Hanging Baskets", slug: "hanging-baskets", sort_order: 14 },
-  { id: "c0000001-0000-0000-0000-000000000015", name: "Supplies", slug: "supplies", sort_order: 15 },
-  { id: "c0000001-0000-0000-0000-000000000016", name: "Gift Certificates", slug: "gift-certificates", sort_order: 16 },
+  { id: "d0000001-0000-0000-0000-000000000001", name: "Annuals", slug: "annuals", sort_order: 1 },
+  { id: "d0000001-0000-0000-0000-000000000002", name: "Geraniums", slug: "geraniums", sort_order: 2 },
+  { id: "d0000001-0000-0000-0000-000000000003", name: "Hanging Baskets", slug: "hanging-baskets", sort_order: 3 },
+  { id: "d0000001-0000-0000-0000-000000000004", name: "Vegetables", slug: "vegetables", sort_order: 4 },
+  { id: "d0000001-0000-0000-0000-000000000005", name: "Herbs", slug: "herbs", sort_order: 5 },
+  { id: "d0000001-0000-0000-0000-000000000006", name: "Specialty Plants", slug: "specialty-plants", sort_order: 6 },
+  { id: "d0000001-0000-0000-0000-000000000007", name: "Supplies", slug: "supplies", sort_order: 7 },
+  { id: "d0000001-0000-0000-0000-000000000008", name: "Gift Cards", slug: "gift-cards", sort_order: 8 },
 ];
 
 export const products: Product[] = [

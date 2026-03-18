@@ -41,11 +41,6 @@ export default function ProductCard({ product }: { product: Product }) {
             <ShoppingCart className="w-12 h-12" />
           </div>
         )}
-        <div className="absolute top-3 left-3">
-          <span className="bg-white/90 backdrop-blur-sm text-xs font-semibold text-garden-700 px-2.5 py-1 rounded-full">
-            {product.sku}
-          </span>
-        </div>
         {!product.in_stock && (
           <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
             <span className="bg-white text-earth-800 font-semibold px-4 py-2 rounded-full text-sm">
