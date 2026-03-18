@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { createClient } from "@/lib/supabase/client";
 import { ShoppingBag, DollarSign, Package, Clock } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
 
@@ -18,27 +17,18 @@ export default function AdminDashboard() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    async function load() {
-      const supabase = createClient();
-
-      const [ordersRes, productsRes, pendingRes, recentRes] = await Promise.all([
-        supabase.from("orders").select("subtotal_cents"),
-        supabase.from("products").select("id", { count: "exact", head: true }),
-        supabase.from("orders").select("id", { count: "exact", head: true }).eq("status", "pending"),
-        supabase.from("orders").select("id, order_number, customer_name, subtotal_cents, status, created_at").order("created_at", { ascending: false }).limit(5),
-      ]);
-
-      const orders = ordersRes.data || [];
-      setStats({
-        totalOrders: orders.length,
-        totalRevenue: orders.reduce((sum, o) => sum + o.subtotal_cents, 0),
-        totalProducts: productsRes.count || 0,
-        pendingOrders: pendingRes.count || 0,
+    fetch("/api/admin/stats")
+      .then((r) => r.json())
+      .then((data) => {
+        setStats({
+          totalOrders: data.totalOrders,
+          totalRevenue: data.totalRevenue,
+          totalProducts: data.totalProducts,
+          pendingOrders: data.pendingOrders,
+        });
+        setRecentOrders(data.recentOrders);
+        setLoading(false);
       });
-      setRecentOrders(recentRes.data || []);
-      setLoading(false);
-    }
-    load();
   }, []);
 
   const cards = [

@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { createClient } from "@/lib/supabase/client";
 import { formatCurrency, slugify } from "@/lib/utils";
 import { Pencil, X, Save } from "lucide-react";
 import type { Product, Category } from "@/types";
@@ -27,17 +26,13 @@ export default function AdminProductsPage() {
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    async function load() {
-      const supabase = createClient();
-      const [prodsRes, catsRes] = await Promise.all([
-        supabase.from("products").select("*").order("category_id").order("sort_order"),
-        supabase.from("categories").select("*").order("sort_order"),
-      ]);
-      setProducts((prodsRes.data as Product[]) || []);
-      setCategories((catsRes.data as Category[]) || []);
-      setLoading(false);
-    }
-    load();
+    fetch("/api/admin/products")
+      .then((r) => r.json())
+      .then((data) => {
+        setProducts(data.products || []);
+        setCategories(data.categories || []);
+        setLoading(false);
+      });
   }, []);
 
   const openEdit = (product: Product) => {
@@ -66,10 +61,11 @@ export default function AdminProductsPage() {
     const priceCents = Math.round(parseFloat(form.price_dollars) * 100);
     const slug = slugify(`${form.sku}-${form.name}`);
 
-    const supabase = createClient();
-    const { error } = await supabase
-      .from("products")
-      .update({
+    const res = await fetch("/api/admin/products", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        id: editingId,
         sku: form.sku,
         name: form.name,
         slug,
@@ -79,10 +75,11 @@ export default function AdminProductsPage() {
         category_id: form.category_id,
         in_stock: form.in_stock,
         image_url: form.image_url || null,
-      })
-      .eq("id", editingId);
+      }),
+    });
+    const result = await res.json();
 
-    if (!error) {
+    if (result.success) {
       setProducts((prev) =>
         prev.map((p) =>
           p.id === editingId
@@ -96,8 +93,11 @@ export default function AdminProductsPage() {
   };
 
   const toggleStock = async (productId: string, currentlyInStock: boolean) => {
-    const supabase = createClient();
-    await supabase.from("products").update({ in_stock: !currentlyInStock }).eq("id", productId);
+    await fetch("/api/admin/products", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id: productId, in_stock: !currentlyInStock }),
+    });
     setProducts((prev) =>
       prev.map((p) => (p.id === productId ? { ...p, in_stock: !currentlyInStock } : p))
     );

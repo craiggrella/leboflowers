@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { createClient } from "@/lib/supabase/client";
 import { useParams } from "next/navigation";
 import { ArrowLeft, Printer } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
@@ -16,24 +15,23 @@ export default function OrderDetailPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    async function load() {
-      const supabase = createClient();
-      const [orderRes, itemsRes] = await Promise.all([
-        supabase.from("orders").select("*").eq("id", id).single(),
-        supabase.from("order_items").select("*").eq("order_id", id),
-      ]);
-      setOrder(orderRes.data as Order);
-      setItems((itemsRes.data as OrderItem[]) || []);
-      setLoading(false);
-    }
-    load();
+    fetch(`/api/admin/orders?id=${id}`)
+      .then((r) => r.json())
+      .then((data) => {
+        setOrder(data.order as Order);
+        setItems((data.items as OrderItem[]) || []);
+        setLoading(false);
+      });
   }, [id]);
 
   const handlePrint = () => window.print();
 
   const handleStatusChange = async (newStatus: string) => {
-    const supabase = createClient();
-    await supabase.from("orders").update({ status: newStatus }).eq("id", id);
+    await fetch("/api/admin/orders", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id, status: newStatus }),
+    });
     setOrder((prev) => prev ? { ...prev, status: newStatus as Order["status"] } : prev);
   };
 

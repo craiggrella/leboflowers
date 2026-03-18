@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { createClient } from "@/lib/supabase/client";
 import { Download, Eye } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
 import Link from "next/link";
@@ -13,16 +12,12 @@ export default function OrdersPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    async function load() {
-      const supabase = createClient();
-      const { data } = await supabase
-        .from("orders")
-        .select("*")
-        .order("created_at", { ascending: false });
-      setOrders((data as Order[]) || []);
-      setLoading(false);
-    }
-    load();
+    fetch("/api/admin/orders")
+      .then((r) => r.json())
+      .then((data) => {
+        setOrders(data.orders || []);
+        setLoading(false);
+      });
   }, []);
 
   const filtered = statusFilter === "all" ? orders : orders.filter((o) => o.status === statusFilter);
