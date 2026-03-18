@@ -1,9 +1,19 @@
-import { getProducts, getCategories } from "@/lib/data";
+import { createClient } from "@/lib/supabase/server";
 import CatalogPage from "@/components/CatalogPage";
+import type { Product, Category } from "@/types";
 
-export default function Home() {
-  const products = getProducts();
-  const categories = getCategories();
+export const revalidate = 60; // revalidate every 60 seconds
+
+export default async function Home() {
+  const supabase = await createClient();
+
+  const [prodsRes, catsRes] = await Promise.all([
+    supabase.from("products").select("*").order("category_id").order("sort_order"),
+    supabase.from("categories").select("*").order("sort_order"),
+  ]);
+
+  const products = (prodsRes.data as Product[]) || [];
+  const categories = (catsRes.data as Category[]) || [];
 
   return (
     <>

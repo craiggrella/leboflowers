@@ -1,14 +1,14 @@
 import { notFound } from "next/navigation";
-import { getProductBySlug, getProducts, getCategories } from "@/lib/data";
+import { createClient } from "@/lib/supabase/server";
 import ProductDetailClient from "@/components/ProductDetailClient";
+import type { Product, Category } from "@/types";
 
-export function generateStaticParams() {
-  return getProducts().map((p) => ({ slug: p.slug }));
-}
+export const revalidate = 60;
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  const product = getProductBySlug(slug);
+  const supabase = await createClient();
+  const { data: product } = await supabase.from("products").select("*").eq("slug", slug).single();
   if (!product) return { title: "Product Not Found" };
   return {
     title: `${product.name} | Mt. Lebanon Flower Sale`,
@@ -18,11 +18,13 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
 
 export default async function ProductPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  const product = getProductBySlug(slug);
+  const supabase = await createClient();
+
+  const { data: product } = await supabase.from("products").select("*").eq("slug", slug).single();
   if (!product) notFound();
 
-  const categories = getCategories();
-  const category = categories.find((c) => c.id === product.category_id);
+  const { data: categories } = await supabase.from("categories").select("*");
+  const category = (categories as Category[])?.find((c) => c.id === (product as Product).category_id);
 
-  return <ProductDetailClient product={product} categoryName={category?.name ?? ""} />;
+  return <ProductDetailClient product={product as Product} categoryName={category?.name ?? ""} />;
 }

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getStripe } from "@/lib/stripe";
-import { products } from "@/lib/data";
+import { createAdminClient } from "@/lib/supabase/admin";
 
 export async function POST(req: NextRequest) {
   try {
@@ -11,10 +11,22 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
     }
 
-    // Validate prices against our data (prevent tampering)
+    const supabase = createAdminClient();
+
+    // Validate prices against DB (prevent tampering)
+    const productIds = items.map((i: { productId: string }) => i.productId);
+    const { data: dbProducts } = await supabase
+      .from("products")
+      .select("id, sku, name, price_cents, unit_label")
+      .in("id", productIds);
+
+    if (!dbProducts) {
+      return NextResponse.json({ error: "Failed to verify products" }, { status: 500 });
+    }
+
     const lineItems = items.map(
       (item: { productId: string; sku: string; name: string; priceCents: number; quantity: number }) => {
-        const product = products.find((p) => p.id === item.productId);
+        const product = dbProducts.find((p) => p.id === item.productId);
         if (!product) throw new Error(`Product not found: ${item.productId}`);
         if (product.price_cents !== item.priceCents) {
           throw new Error(`Price mismatch for ${product.sku}`);
