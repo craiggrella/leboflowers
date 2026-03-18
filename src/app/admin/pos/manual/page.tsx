@@ -3,8 +3,10 @@
 import { useState, useEffect } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { formatCurrency } from "@/lib/utils";
+import { useRouter } from "next/navigation";
 import type { Product, Category } from "@/types";
-import { FileText, Plus, Minus, Trash2, Search, Check } from "lucide-react";
+import { FileText, Plus, Minus, Trash2, Search, ArrowLeft } from "lucide-react";
+import Link from "next/link";
 
 interface PosItem {
   productId: string;
@@ -15,6 +17,7 @@ interface PosItem {
 }
 
 export default function PosManualPage() {
+  const router = useRouter();
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [search, setSearch] = useState("");
@@ -23,7 +26,6 @@ export default function PosManualPage() {
   const [checkNumber, setCheckNumber] = useState("");
   const [items, setItems] = useState<PosItem[]>([]);
   const [loading, setLoading] = useState(false);
-  const [success, setSuccess] = useState(false);
   const [error, setError] = useState("");
 
   useEffect(() => {
@@ -86,11 +88,7 @@ export default function PosManualPage() {
       });
       const data = await res.json();
       if (data.success) {
-        setSuccess(true);
-        setItems([]);
-        setCustomerName("");
-        setCheckNumber("");
-        setTimeout(() => setSuccess(false), 3000);
+        router.push("/admin/orders");
       } else {
         setError(data.error || "Failed to record transaction");
       }
@@ -102,8 +100,15 @@ export default function PosManualPage() {
 
   return (
     <div>
-      <h1 className="font-display text-2xl font-bold text-earth-900 mb-2">Manual Entry (Cash/Check)</h1>
-      <p className="text-earth-500 text-sm mb-6">Record walk-in payments made with cash or check.</p>
+      <Link
+        href="/admin/orders"
+        className="inline-flex items-center gap-1.5 text-garden-600 hover:text-garden-700 text-sm font-medium mb-4"
+      >
+        <ArrowLeft className="w-4 h-4" />
+        Back to Orders
+      </Link>
+      <h1 className="font-display text-2xl font-bold text-earth-900 mb-2">Add Order (Cash/Check)</h1>
+      <p className="text-earth-500 text-sm mb-6">Record a payment made with cash or check.</p>
 
       <div className="grid lg:grid-cols-2 gap-6">
         {/* Product selection — same as POS card */}
@@ -234,12 +239,6 @@ export default function PosManualPage() {
               <span className="text-2xl font-bold text-garden-700">{formatCurrency(total)}</span>
             </div>
           </div>
-
-          {success && (
-            <div className="flex items-center gap-2 bg-garden-50 border border-garden-200 text-garden-700 px-4 py-3 rounded-lg text-sm mb-4">
-              <Check className="w-4 h-4" /> Transaction recorded successfully!
-            </div>
-          )}
 
           {error && (
             <div className="bg-rose-50 border border-rose-200 text-rose-700 px-4 py-3 rounded-lg text-sm mb-4">

@@ -24,7 +24,7 @@ export default function OrderDetailPage() {
       });
   }, [id]);
 
-  const handlePrint = () => window.print();
+  const handlePrint = () => window.open(`/api/admin/orders/print?id=${id}`, "_blank");
 
   const handleStatusChange = async (newStatus: string) => {
     await fetch("/api/admin/orders", {

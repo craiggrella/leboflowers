@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { ShoppingBag, DollarSign, Package, Clock } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
+import Link from "next/link";
 
 export default function AdminDashboard() {
   const [stats, setStats] = useState({
@@ -32,10 +33,10 @@ export default function AdminDashboard() {
   }, []);
 
   const cards = [
-    { label: "Total Orders", value: stats.totalOrders.toString(), icon: ShoppingBag, color: "bg-garden-100 text-garden-700" },
-    { label: "Total Revenue", value: formatCurrency(stats.totalRevenue), icon: DollarSign, color: "bg-sunshine-100 text-sunshine-600" },
-    { label: "Products", value: stats.totalProducts.toString(), icon: Package, color: "bg-lavender-100 text-lavender-600" },
-    { label: "Pending Orders", value: stats.pendingOrders.toString(), icon: Clock, color: "bg-petal-100 text-petal-600" },
+    { label: "Total Orders", value: stats.totalOrders.toString(), icon: ShoppingBag, color: "bg-garden-100 text-garden-700", href: "/admin/orders" },
+    { label: "Total Revenue", value: formatCurrency(stats.totalRevenue), icon: DollarSign, color: "bg-sunshine-100 text-sunshine-600", href: "/admin/reports" },
+    { label: "Products", value: stats.totalProducts.toString(), icon: Package, color: "bg-lavender-100 text-lavender-600", href: "/admin/products" },
+    { label: "Pending Orders", value: stats.pendingOrders.toString(), icon: Clock, color: "bg-petal-100 text-petal-600", href: "/admin/orders?status=pending" },
   ];
 
   return (
@@ -44,7 +45,7 @@ export default function AdminDashboard() {
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         {cards.map((stat) => (
-          <div key={stat.label} className="bg-white rounded-xl border border-earth-100 p-5 shadow-sm">
+          <Link key={stat.label} href={stat.href} className="bg-white rounded-xl border border-earth-100 p-5 shadow-sm hover:shadow-md hover:border-garden-200 transition-all cursor-pointer block">
             <div className="flex items-center justify-between mb-3">
               <span className="text-sm text-earth-500">{stat.label}</span>
               <div className={`p-2 rounded-lg ${stat.color}`}>
@@ -54,7 +55,7 @@ export default function AdminDashboard() {
             <span className="text-2xl font-bold text-earth-900">
               {loading ? "..." : stat.value}
             </span>
-          </div>
+          </Link>
         ))}
       </div>
 

@@ -1,14 +1,24 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { Download, Eye } from "lucide-react";
+import { Suspense, useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
+import { Download, Eye, Plus } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
 import Link from "next/link";
 import type { Order } from "@/types";
 
 export default function OrdersPage() {
+  return (
+    <Suspense>
+      <OrdersContent />
+    </Suspense>
+  );
+}
+
+function OrdersContent() {
+  const searchParams = useSearchParams();
   const [orders, setOrders] = useState<Order[]>([]);
-  const [statusFilter, setStatusFilter] = useState("all");
+  const [statusFilter, setStatusFilter] = useState(searchParams.get("status") || "all");
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -26,13 +36,22 @@ export default function OrdersPage() {
     <div>
       <div className="flex items-center justify-between mb-6">
         <h1 className="font-display text-2xl font-bold text-earth-900">Orders</h1>
-        <a
-          href="/api/admin/export"
-          className="inline-flex items-center gap-2 bg-garden-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-garden-700 transition-colors"
-        >
-          <Download className="w-4 h-4" />
-          Export for Dean&apos;s
-        </a>
+        <div className="flex gap-3">
+          <Link
+            href="/admin/pos/manual"
+            className="inline-flex items-center gap-2 bg-garden-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-garden-700 transition-colors"
+          >
+            <Plus className="w-4 h-4" />
+            Add Order
+          </Link>
+          <a
+            href="/api/admin/export"
+            className="inline-flex items-center gap-2 bg-earth-100 text-earth-700 px-4 py-2 rounded-lg text-sm font-medium hover:bg-earth-200 transition-colors"
+          >
+            <Download className="w-4 h-4" />
+            Export for Dean&apos;s
+          </a>
+        </div>
       </div>
 
       <div className="flex gap-2 mb-4">
