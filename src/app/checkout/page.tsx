@@ -1,52 +1,60 @@
 "use client";
 
 import { useState } from "react";
+import { PayPalScriptProvider, PayPalButtons } from "@paypal/react-paypal-js";
 import { useCart } from "@/context/CartContext";
 import { formatCurrency } from "@/lib/utils";
 import { ArrowLeft, Lock } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+
+const paypalClientId = process.env.NEXT_PUBLIC_PAYPAL_CLIENT_ID;
+const stripeEnabled = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY && process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY !== "pk_test_placeholder";
 
 export default function CheckoutPage() {
-  const { items, totalCents } = useCart();
+  const { items, totalCents, clearCart } = useCart();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
-  const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [stripeLoading, setStripeLoading] = useState(false);
+  const router = useRouter();
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
+  const customerInfoValid = name.trim() && email.trim();
+
+  const cartPayload = items.map((i) => ({
+    productId: i.productId,
+    sku: i.sku,
+    name: i.name,
+    priceCents: i.priceCents,
+    quantity: i.quantity,
+  }));
+
+  // Stripe checkout (redirect flow)
+  const handleStripeCheckout = async () => {
+    setStripeLoading(true);
     setError("");
-
     try {
       const res = await fetch("/api/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          items: items.map((i) => ({
-            productId: i.productId,
-            sku: i.sku,
-            name: i.name,
-            priceCents: i.priceCents,
-            quantity: i.quantity,
-          })),
+          items: cartPayload,
           customerName: name,
           customerEmail: email,
           customerPhone: phone,
         }),
       });
-
       const data = await res.json();
       if (data.url) {
         window.location.href = data.url;
       } else {
-        setError(data.error || "Something went wrong. Please try again.");
-        setLoading(false);
+        setError(data.error || "Something went wrong.");
+        setStripeLoading(false);
       }
     } catch {
       setError("Network error. Please try again.");
-      setLoading(false);
+      setStripeLoading(false);
     }
   };
 
@@ -73,7 +81,7 @@ export default function CheckoutPage() {
 
       <h1 className="font-display text-3xl font-bold text-earth-900 mb-2">Checkout</h1>
       <p className="text-earth-500 mb-8">
-        Fill in your details below. You&apos;ll be redirected to Stripe to complete payment securely.
+        Fill in your details, then choose your payment method below.
       </p>
 
       {/* Order summary */}
@@ -95,7 +103,8 @@ export default function CheckoutPage() {
         </div>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-5">
+      {/* Customer info */}
+      <div className="space-y-4 mb-8">
         <div>
           <label htmlFor="name" className="block text-sm font-medium text-earth-700 mb-1">
             Full Name *
@@ -139,26 +148,100 @@ export default function CheckoutPage() {
             placeholder="(412) 555-0123"
           />
         </div>
+      </div>
 
-        {error && (
-          <div className="bg-rose-50 border border-rose-200 text-rose-700 px-4 py-3 rounded-lg text-sm">
-            {error}
-          </div>
-        )}
+      {!customerInfoValid && (
+        <div className="bg-sunshine-50 border border-sunshine-200 text-earth-700 px-4 py-3 rounded-lg text-sm mb-6">
+          Please fill in your name and email above to continue with payment.
+        </div>
+      )}
 
-        <button
-          type="submit"
-          disabled={loading}
-          className="w-full flex items-center justify-center gap-2 bg-garden-600 hover:bg-garden-700 text-white font-semibold py-3 rounded-full transition-colors shadow-md disabled:opacity-50"
-        >
-          <Lock className="w-4 h-4" />
-          {loading ? "Redirecting to payment..." : `Pay ${formatCurrency(totalCents)}`}
-        </button>
+      {error && (
+        <div className="bg-rose-50 border border-rose-200 text-rose-700 px-4 py-3 rounded-lg text-sm mb-6">
+          {error}
+        </div>
+      )}
 
-        <p className="text-xs text-earth-400 text-center">
-          Payments are processed securely through Stripe. We never see your card details.
-        </p>
-      </form>
+      {/* Payment options */}
+      {customerInfoValid && (
+        <div className="space-y-4">
+          <h2 className="font-semibold text-earth-900">Choose Payment Method</h2>
+
+          {/* PayPal */}
+          {paypalClientId && paypalClientId !== "PAYPAL_CLIENT_ID_PLACEHOLDER" ? (
+            <div className="bg-white border border-earth-200 rounded-xl p-5">
+              <h3 className="text-sm font-medium text-earth-700 mb-3">Pay with PayPal</h3>
+              <PayPalScriptProvider options={{ clientId: paypalClientId, currency: "USD" }}>
+                <PayPalButtons
+                  style={{ layout: "vertical", shape: "pill", label: "pay" }}
+                  createOrder={async () => {
+                    const res = await fetch("/api/paypal/create", {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({
+                        items: cartPayload,
+                        customerName: name,
+                        customerEmail: email,
+                        customerPhone: phone,
+                      }),
+                    });
+                    const data = await res.json();
+                    if (data.error) throw new Error(data.error);
+                    return data.orderID;
+                  }}
+                  onApprove={async (data) => {
+                    const res = await fetch("/api/paypal/capture", {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({
+                        orderID: data.orderID,
+                        customerName: name,
+                        customerEmail: email,
+                        customerPhone: phone,
+                        items: cartPayload,
+                      }),
+                    });
+                    const result = await res.json();
+                    if (result.success) {
+                      clearCart();
+                      router.push("/checkout/success");
+                    } else {
+                      setError(result.error || "Payment failed");
+                    }
+                  }}
+                  onError={(err) => {
+                    console.error("PayPal error:", err);
+                    setError("PayPal payment failed. Please try again.");
+                  }}
+                />
+              </PayPalScriptProvider>
+            </div>
+          ) : (
+            <div className="bg-earth-50 border border-earth-200 rounded-xl p-5 text-center text-earth-500 text-sm">
+              PayPal is not configured yet. Add NEXT_PUBLIC_PAYPAL_CLIENT_ID to enable.
+            </div>
+          )}
+
+          {/* Stripe (if enabled) */}
+          {stripeEnabled && (
+            <div className="bg-white border border-earth-200 rounded-xl p-5">
+              <h3 className="text-sm font-medium text-earth-700 mb-3">Pay with Card (Stripe)</h3>
+              <button
+                onClick={handleStripeCheckout}
+                disabled={stripeLoading}
+                className="w-full flex items-center justify-center gap-2 bg-earth-900 hover:bg-earth-800 text-white font-semibold py-3 rounded-full transition-colors disabled:opacity-50"
+              >
+                <Lock className="w-4 h-4" />
+                {stripeLoading ? "Redirecting..." : `Pay ${formatCurrency(totalCents)} with Card`}
+              </button>
+            </div>
+          )}
+
+          <p className="text-xs text-earth-400 text-center">
+            Your payment is processed securely. We never see your payment details.
+          </p>
+        </div>
+      )}
     </div>
   );
 }

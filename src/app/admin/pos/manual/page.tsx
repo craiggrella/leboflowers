@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
-import { products, categories } from "@/lib/data";
+import { useState, useEffect } from "react";
+import { createClient } from "@/lib/supabase/client";
 import { formatCurrency } from "@/lib/utils";
+import type { Product, Category } from "@/types";
 import { FileText, Plus, Minus, Trash2, Search, Check } from "lucide-react";
 
 interface PosItem {
@@ -14,6 +15,8 @@ interface PosItem {
 }
 
 export default function PosManualPage() {
+  const [products, setProducts] = useState<Product[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [search, setSearch] = useState("");
   const [customerName, setCustomerName] = useState("");
   const [paymentMethod, setPaymentMethod] = useState<"cash" | "check">("cash");
@@ -23,6 +26,19 @@ export default function PosManualPage() {
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState("");
 
+  useEffect(() => {
+    async function load() {
+      const supabase = createClient();
+      const [prodsRes, catsRes] = await Promise.all([
+        supabase.from("products").select("*").order("name"),
+        supabase.from("categories").select("*").order("sort_order"),
+      ]);
+      setProducts((prodsRes.data as Product[]) || []);
+      setCategories((catsRes.data as Category[]) || []);
+    }
+    load();
+  }, []);
+
   const filtered = search.trim()
     ? products.filter(
         (p) =>
@@ -31,7 +47,7 @@ export default function PosManualPage() {
       )
     : [];
 
-  const addProduct = (product: (typeof products)[0]) => {
+  const addProduct = (product: Product) => {
     setItems((prev) => {
       const existing = prev.find((i) => i.productId === product.id);
       if (existing) {

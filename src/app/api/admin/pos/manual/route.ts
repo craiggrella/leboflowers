@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { products } from "@/lib/data";
 
 export async function POST(req: NextRequest) {
   try {
@@ -10,10 +9,19 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Missing fields" }, { status: 400 });
     }
 
-    // Calculate total
+    const supabase = createAdminClient();
+
+    // Look up products from DB by SKU to get correct IDs and prices
+    const skus = items.map((i: { sku: string }) => i.sku);
+    const { data: dbProducts } = await supabase
+      .from("products")
+      .select("id, sku, name, price_cents")
+      .in("sku", skus);
+
+    // Calculate total from DB prices
     let totalCents = 0;
-    const orderItems = items.map((item: { productId: string; sku: string; name: string; priceCents: number; quantity: number }) => {
-      const product = products.find((p) => p.id === item.productId);
+    const orderItems = items.map((item: { sku: string; name: string; priceCents: number; quantity: number }) => {
+      const product = dbProducts?.find((p) => p.sku === item.sku);
       const price = product?.price_cents || item.priceCents;
       totalCents += price * item.quantity;
       return {
@@ -24,8 +32,6 @@ export async function POST(req: NextRequest) {
         product_id: product?.id || null,
       };
     });
-
-    const supabase = createAdminClient();
 
     // Create order
     const { data: order, error: orderError } = await supabase
@@ -44,7 +50,7 @@ export async function POST(req: NextRequest) {
 
     if (orderError) {
       console.error("Manual order error:", orderError);
-      return NextResponse.json({ error: "Failed to create order" }, { status: 500 });
+      return NextResponse.json({ error: "Failed to create order: " + orderError.message }, { status: 500 });
     }
 
     // Create order items
