@@ -14,6 +14,7 @@ interface EditForm {
   unit_label: string;
   category_id: string;
   in_stock: boolean;
+  image_url: string;
 }
 
 export default function AdminProductsPage() {
@@ -49,6 +50,7 @@ export default function AdminProductsPage() {
       unit_label: product.unit_label,
       category_id: product.category_id,
       in_stock: product.in_stock,
+      image_url: product.image_url || "",
     });
   };
 
@@ -76,6 +78,7 @@ export default function AdminProductsPage() {
         unit_label: form.unit_label,
         category_id: form.category_id,
         in_stock: form.in_stock,
+        image_url: form.image_url || null,
       })
       .eq("id", editingId);
 
@@ -83,7 +86,7 @@ export default function AdminProductsPage() {
       setProducts((prev) =>
         prev.map((p) =>
           p.id === editingId
-            ? { ...p, sku: form.sku, name: form.name, slug, description: form.description || null, price_cents: priceCents, unit_label: form.unit_label, category_id: form.category_id, in_stock: form.in_stock }
+            ? { ...p, sku: form.sku, name: form.name, slug, description: form.description || null, price_cents: priceCents, unit_label: form.unit_label, category_id: form.category_id, in_stock: form.in_stock, image_url: form.image_url || null }
             : p
         )
       );
@@ -256,6 +259,20 @@ export default function AdminProductsPage() {
                     ))}
                   </select>
                 </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-earth-700 mb-1">Image URL</label>
+                <input
+                  type="url"
+                  value={form.image_url}
+                  onChange={(e) => setForm({ ...form, image_url: e.target.value })}
+                  placeholder="https://..."
+                  className="w-full px-3 py-2 rounded-lg border border-earth-200 text-sm focus:ring-2 focus:ring-garden-400 focus:border-transparent"
+                />
+                {form.image_url && (
+                  <img src={form.image_url} alt="Preview" className="mt-2 w-20 h-20 object-cover rounded-lg border border-earth-200" />
+                )}
               </div>
 
               <div className="flex items-center gap-2">
