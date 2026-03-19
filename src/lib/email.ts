@@ -1,4 +1,30 @@
+import https from "https";
+
 const EMAIL_API_URL = "https://mail.campaignplanner.org/api/transactional/send";
+
+// Use https module directly to bypass expired SSL cert on ESP
+function postJSON(url: string, headers: Record<string, string>, body: string): Promise<{ status: number; body: string }> {
+  return new Promise((resolve, reject) => {
+    const parsed = new URL(url);
+    const req = https.request(
+      {
+        hostname: parsed.hostname,
+        path: parsed.pathname,
+        method: "POST",
+        headers: { ...headers, "Content-Type": "application/json", "Content-Length": Buffer.byteLength(body) },
+        rejectUnauthorized: false,
+      },
+      (res) => {
+        let data = "";
+        res.on("data", (chunk) => (data += chunk));
+        res.on("end", () => resolve({ status: res.statusCode || 0, body: data }));
+      }
+    );
+    req.on("error", reject);
+    req.write(body);
+    req.end();
+  });
+}
 
 interface OrderReceiptData {
   orderNumber: number;
@@ -126,23 +152,18 @@ export async function sendOrderReceipt(data: OrderReceiptData) {
 </html>`;
 
   try {
-    const res = await fetch(EMAIL_API_URL, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "X-Auth-APIKey": apiKey,
-      },
-      body: JSON.stringify({
-        fromname: fromName,
-        fromemail: fromEmail,
-        to: data.customerEmail,
-        subject: `Order #${data.orderNumber} Confirmed — Mt. Lebanon Flower Sale`,
-        body: html,
-      }),
+    const payload = JSON.stringify({
+      fromname: fromName,
+      fromemail: fromEmail,
+      to: data.customerEmail,
+      subject: `Order #${data.orderNumber} Confirmed — Mt. Lebanon Flower Sale`,
+      body: html,
     });
 
-    if (!res.ok) {
-      console.error("Email API error:", res.status, await res.text());
+    const res = await postJSON(EMAIL_API_URL, { "X-Auth-APIKey": apiKey }, payload);
+
+    if (res.status !== 200) {
+      console.error("Email API error:", res.status, res.body);
     } else {
       console.log(`Receipt email sent to ${data.customerEmail} for order #${data.orderNumber}`);
     }
