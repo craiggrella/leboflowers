@@ -122,6 +122,7 @@ export async function GET(req: NextRequest) {
         <p style="margin: 2px 0; font-size: 14px; color: #6b5744;">
           <strong>Source:</strong> ${order.source.replace(/_/g, " ")}
         </p>
+        ${order.stripe_payment_intent ? `<p style="margin: 2px 0; font-size: 12px; color: #6b5744;"><strong>Transaction ID:</strong> <span style="font-family:monospace">${order.stripe_payment_intent.replace(/^square_/, "")}</span></p>` : ""}
       </div>
       <div style="text-align: right;">
         <div style="display: inline-block; padding: 6px 16px; border-radius: 20px; font-size: 13px; font-weight: 700; background: ${isPaid ? "#dcfce7" : "#fee2e2"}; color: ${isPaid ? "#166534" : "#be123c"};">

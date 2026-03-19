@@ -89,6 +89,9 @@ export default function OrderDetailPage() {
             <p><strong>Date:</strong> {new Date(order.created_at).toLocaleString()}</p>
             <p><strong>Payment:</strong> {order.payment_method.replace(/_/g, " ")}{order.check_number ? ` #${order.check_number}` : ""}</p>
             <p><strong>Source:</strong> {order.source.replace(/_/g, " ")}</p>
+            {order.stripe_payment_intent && (
+              <p><strong>Transaction ID:</strong> <span className="font-mono text-xs">{order.stripe_payment_intent.replace(/^square_/, "")}</span></p>
+            )}
             <div className="flex items-center gap-2 mt-1">
               <strong>Organization:</strong>
               <select

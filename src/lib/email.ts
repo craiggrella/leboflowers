@@ -1,20 +1,4 @@
-import nodemailer from "nodemailer";
-
-function getTransport() {
-  const host = process.env.SMTP_HOST;
-  const port = parseInt(process.env.SMTP_PORT || "587");
-  const user = process.env.SMTP_USER;
-  const pass = process.env.SMTP_PASS;
-
-  if (!host || !user || !pass) return null;
-
-  return nodemailer.createTransport({
-    host,
-    port,
-    secure: port === 465,
-    auth: { user, pass },
-  });
-}
+const EMAIL_API_URL = "https://mail.campaignplanner.org/api/transactional/send";
 
 interface OrderReceiptData {
   orderNumber: number;
@@ -28,13 +12,14 @@ interface OrderReceiptData {
 }
 
 export async function sendOrderReceipt(data: OrderReceiptData) {
-  const transport = getTransport();
-  if (!transport) {
-    console.log("SMTP not configured — skipping receipt email");
+  const apiKey = process.env.EMAIL_API_KEY;
+  if (!apiKey) {
+    console.log("EMAIL_API_KEY not configured — skipping receipt email");
     return;
   }
 
-  const from = process.env.SMTP_FROM || process.env.SMTP_USER!;
+  const fromName = process.env.EMAIL_FROM_NAME || "Mt Lebanon Flower Sale";
+  const fromEmail = process.env.EMAIL_FROM_ADDRESS || "admin@leboflowers.com";
   const formatMoney = (cents: number) => `$${(cents / 100).toFixed(2)}`;
 
   const itemRows = data.items
@@ -87,6 +72,13 @@ export async function sendOrderReceipt(data: OrderReceiptData) {
         </table>
       </div>
 
+      ${data.organization ? `
+      <!-- Organization -->
+      <div style="background:#f0fdf4;border:2px solid #16a34a;border-radius:8px;padding:14px;margin-bottom:20px;text-align:center">
+        <p style="margin:0;font-size:12px;color:#6b5744;text-transform:uppercase;letter-spacing:1px">Your purchase supports</p>
+        <p style="margin:4px 0 0;font-size:18px;font-weight:700;color:#166534">${data.organization}</p>
+      </div>` : ""}
+
       <!-- Items -->
       <table style="width:100%;border-collapse:collapse;margin-bottom:16px">
         <thead>
@@ -107,13 +99,6 @@ export async function sendOrderReceipt(data: OrderReceiptData) {
       <div style="text-align:right;border-top:2px solid #166534;padding-top:12px;margin-bottom:24px">
         <span style="font-size:22px;font-weight:800;color:#166534">Total: ${formatMoney(data.totalCents)}</span>
       </div>
-
-      ${data.organization ? `
-      <!-- Organization -->
-      <div style="background:#f0fdf4;border:2px solid #16a34a;border-radius:8px;padding:14px;margin-bottom:20px;text-align:center">
-        <p style="margin:0;font-size:12px;color:#6b5744;text-transform:uppercase;letter-spacing:1px">Your purchase supports</p>
-        <p style="margin:4px 0 0;font-size:18px;font-weight:700;color:#166534">${data.organization}</p>
-      </div>` : ""}
 
       <!-- Pickup info -->
       <div style="background:#fef9c3;border:1px solid #fef08a;border-radius:8px;padding:14px;margin-bottom:20px">
@@ -141,13 +126,26 @@ export async function sendOrderReceipt(data: OrderReceiptData) {
 </html>`;
 
   try {
-    await transport.sendMail({
-      from,
-      to: data.customerEmail,
-      subject: `Order #${data.orderNumber} Confirmed — Mt. Lebanon Flower Sale`,
-      html,
+    const res = await fetch(EMAIL_API_URL, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-Auth-APIKey": apiKey,
+      },
+      body: JSON.stringify({
+        fromname: fromName,
+        fromemail: fromEmail,
+        to: data.customerEmail,
+        subject: `Order #${data.orderNumber} Confirmed — Mt. Lebanon Flower Sale`,
+        body: html,
+      }),
     });
-    console.log(`Receipt email sent to ${data.customerEmail} for order #${data.orderNumber}`);
+
+    if (!res.ok) {
+      console.error("Email API error:", res.status, await res.text());
+    } else {
+      console.log(`Receipt email sent to ${data.customerEmail} for order #${data.orderNumber}`);
+    }
   } catch (err) {
     console.error("Failed to send receipt email:", err);
   }

@@ -116,7 +116,7 @@ export default function CheckoutPage() {
   return (
     <div className="container py-8 max-w-2xl">
       <Script
-        src="https://sandbox.web.squarecdn.com/v1/square.js"
+        src={squareEnv === "production" ? "https://web.squarecdn.com/v1/square.js" : "https://sandbox.web.squarecdn.com/v1/square.js"}
         strategy="afterInteractive"
         onLoad={initializeSquare}
       />
