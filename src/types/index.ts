@@ -15,6 +15,7 @@ export interface Product {
   category_id: string;
   image_url: string | null;
   unit_label: string;
+  subcategory: string | null;
   in_stock: boolean;
   sort_order: number;
   created_at: string;
