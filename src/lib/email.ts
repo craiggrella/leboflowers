@@ -2,28 +2,49 @@ import https from "https";
 
 const EMAIL_API_URL = "https://mail.campaignplanner.org/api/transactional/send";
 
-// Use https module directly to bypass expired SSL cert on ESP
-function postJSON(url: string, headers: Record<string, string>, body: string): Promise<{ status: number; body: string }> {
-  return new Promise((resolve, reject) => {
-    const parsed = new URL(url);
-    const req = https.request(
-      {
-        hostname: parsed.hostname,
-        path: parsed.pathname,
-        method: "POST",
-        headers: { ...headers, "Content-Type": "application/json", "Content-Length": Buffer.byteLength(body) },
-        rejectUnauthorized: false,
-      },
-      (res) => {
-        let data = "";
-        res.on("data", (chunk) => (data += chunk));
-        res.on("end", () => resolve({ status: res.statusCode || 0, body: data }));
-      }
-    );
-    req.on("error", reject);
-    req.write(body);
-    req.end();
-  });
+// Try https module first (supports rejectUnauthorized), fallback to fetch
+async function postJSON(url: string, headers: Record<string, string>, body: string): Promise<{ status: number; body: string }> {
+  // Method 1: https module with SSL bypass
+  try {
+    const result = await new Promise<{ status: number; body: string }>((resolve, reject) => {
+      const parsed = new URL(url);
+      const req = https.request(
+        {
+          hostname: parsed.hostname,
+          path: parsed.pathname,
+          method: "POST",
+          headers: { ...headers, "Content-Type": "application/json", "Content-Length": Buffer.byteLength(body) },
+          rejectUnauthorized: false,
+        },
+        (res) => {
+          let data = "";
+          res.on("data", (chunk) => (data += chunk));
+          res.on("end", () => resolve({ status: res.statusCode || 0, body: data }));
+        }
+      );
+      req.on("error", reject);
+      req.write(body);
+      req.end();
+    });
+    return result;
+  } catch (err) {
+    console.error("https module failed, trying fetch:", err);
+  }
+
+  // Method 2: fetch (may fail on expired cert but try anyway)
+  try {
+    process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
+    const res = await fetch(url, {
+      method: "POST",
+      headers: { ...headers, "Content-Type": "application/json" },
+      body,
+    });
+    const text = await res.text();
+    return { status: res.status, body: text };
+  } catch (err) {
+    console.error("fetch also failed:", err);
+    return { status: 0, body: String(err) };
+  }
 }
 
 interface OrderReceiptData {
@@ -71,7 +92,7 @@ export async function sendOrderReceipt(data: OrderReceiptData) {
     <!-- Header -->
     <div style="background:#166534;border-radius:12px 12px 0 0;padding:30px;text-align:center">
       <h1 style="margin:0;color:white;font-size:24px">Mt. Lebanon Flower Sale</h1>
-      <p style="margin:6px 0 0;color:#bbf7d0;font-size:13px">Community Fundraiser &bull; Dean's Greenhouse</p>
+      <p style="margin:6px 0 0;color:#bbf7d0;font-size:13px">Community Fundraiser</p>
     </div>
 
     <!-- Body -->
@@ -131,7 +152,7 @@ export async function sendOrderReceipt(data: OrderReceiptData) {
         <strong style="font-size:13px;color:#6b5744">Pickup Information</strong>
         <p style="margin:6px 0 0;font-size:14px;color:#2d2418">
           You will receive a separate notification with pickup date, time, and location details.
-          Please bring this email or your order number for pickup.
+          Please bring this email or your order number and ID for pickup.
         </p>
       </div>
 
