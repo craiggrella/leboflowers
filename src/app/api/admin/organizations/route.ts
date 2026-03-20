@@ -8,7 +8,7 @@ export async function GET() {
   if (!admin) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const supabase = createAdminClient();
-  const { data } = await supabase.from("organizations").select("*").order("sort_order");
+  const { data } = await supabase.from("organizations").select("*").eq("active", true).order("sort_order");
   return NextResponse.json({ organizations: data || [] });
 }
 
