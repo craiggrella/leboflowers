@@ -97,46 +97,22 @@ export async function GET(req: NextRequest) {
       </button>
     </div>
 
-    <!-- Header with QR -->
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; border-bottom: 3px solid #16a34a; padding-bottom: 20px;">
+    <!-- Header: Customer name big + QR -->
+    <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px; border-bottom: 3px solid #16a34a; padding-bottom: 16px;">
       <div>
-        <h1 style="margin: 0; font-size: 28px; color: #166534;">Mt. Lebanon Flower Sale</h1>
-        <p style="margin: 4px 0 0; color: #6b5744; font-size: 13px;">Community Fundraiser &bull; Dean's Greenhouse</p>
-      </div>
-      <div style="text-align: center;">
-        <img src="${qrCodeDataUrl}" alt="QR Code" style="width: 120px; height: 120px;" />
-        <p style="margin: 4px 0 0; font-size: 9px; color: #6b5744;">Scan to fulfill</p>
-      </div>
-    </div>
-
-    <!-- Order Info -->
-    <div style="display: flex; justify-content: space-between; margin-bottom: 24px;">
-      <div>
-        <h2 style="margin: 0 0 8px; font-size: 20px;">Order #${order.order_number}</h2>
-        <p style="margin: 2px 0; font-size: 14px; color: #6b5744;">
-          <strong>Date:</strong> ${new Date(order.created_at).toLocaleDateString("en-US", { weekday: "long", year: "numeric", month: "long", day: "numeric" })}
+        <h1 style="margin: 0; font-size: 32px; font-weight: 900; color: #2d2418;">${order.customer_name}</h1>
+        <p style="margin: 4px 0 0; font-size: 14px; color: #6b5744;">
+          ${order.customer_email || ""}${order.customer_email && order.customer_phone ? " &bull; " : ""}${order.customer_phone || ""}
         </p>
-        <p style="margin: 2px 0; font-size: 14px; color: #6b5744;">
-          <strong>Payment:</strong> ${order.payment_method.replace(/_/g, " ")}${order.check_number ? ` #${order.check_number}` : ""}
+        <p style="margin: 6px 0 0; font-size: 13px; color: #6b5744;">
+          <strong>Order #${order.order_number}</strong> &bull; ${new Date(order.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })} &bull;
+          <span style="display: inline-block; padding: 2px 10px; border-radius: 12px; font-size: 11px; font-weight: 700; background: ${isPaid ? "#dcfce7" : "#fee2e2"}; color: ${isPaid ? "#166534" : "#be123c"};">${statusLabel}</span>
         </p>
-        <p style="margin: 2px 0; font-size: 14px; color: #6b5744;">
-          <strong>Source:</strong> ${order.source.replace(/_/g, " ")}
-        </p>
-        ${order.stripe_payment_intent ? `<p style="margin: 2px 0; font-size: 12px; color: #6b5744;"><strong>Transaction ID:</strong> <span style="font-family:monospace">${order.stripe_payment_intent.replace(/^square_/, "")}</span></p>` : ""}
       </div>
-      <div style="text-align: right;">
-        <div style="display: inline-block; padding: 6px 16px; border-radius: 20px; font-size: 13px; font-weight: 700; background: ${isPaid ? "#dcfce7" : "#fee2e2"}; color: ${isPaid ? "#166534" : "#be123c"};">
-          ${statusLabel}
-        </div>
+      <div style="text-align: center; flex-shrink: 0; margin-left: 16px;">
+        <img src="${qrCodeDataUrl}" alt="QR Code" style="width: 100px; height: 100px;" />
+        <p style="margin: 2px 0 0; font-size: 8px; color: #6b5744;">Scan to fulfill</p>
       </div>
-    </div>
-
-    <!-- Customer -->
-    <div style="background: #faf8f5; border: 1px solid #e2d5c5; border-radius: 10px; padding: 16px; margin-bottom: 24px;">
-      <h3 style="margin: 0 0 8px; font-size: 14px; color: #6b5744; text-transform: uppercase; letter-spacing: 1px;">Customer</h3>
-      <p style="margin: 2px 0; font-size: 16px; font-weight: 600;">${order.customer_name}</p>
-      ${order.customer_email ? `<p style="margin: 2px 0; font-size: 14px; color: #6b5744;">${order.customer_email}</p>` : ""}
-      ${order.customer_phone ? `<p style="margin: 2px 0; font-size: 14px; color: #6b5744;">${order.customer_phone}</p>` : ""}
     </div>
 
     ${order.organization ? `
@@ -167,22 +143,10 @@ export async function GET(req: NextRequest) {
       <span style="font-size: 20px; font-weight: 800; color: #166534;">Total: ${formatMoney(order.subtotal_cents)}</span>
     </div>
 
-    ${order.notes ? `
-    <div style="margin-top: 20px; background: #fef9c3; border: 1px solid #fef08a; border-radius: 10px; padding: 12px 16px;">
-      <strong style="font-size: 12px; text-transform: uppercase; letter-spacing: 1px; color: #6b5744;">Notes</strong>
-      <p style="margin: 4px 0 0; font-size: 14px;">${order.notes}</p>
-    </div>` : ""}
-
     <!-- Verification -->
-    <div style="margin-top: 30px; display: flex; gap: 20px;">
-      <div style="flex: 1; border: 1px dashed #c4b8a8; border-radius: 8px; padding: 12px 14px;">
-        <span style="font-size: 11px; color: #6b5744; text-transform: uppercase; letter-spacing: 1px;">Pulled by</span>
-        <div style="border-bottom: 1px solid #c4b8a8; margin-top: 20px;">&nbsp;</div>
-      </div>
-      <div style="flex: 1; border: 1px dashed #c4b8a8; border-radius: 8px; padding: 12px 14px;">
-        <span style="font-size: 11px; color: #6b5744; text-transform: uppercase; letter-spacing: 1px;">Verified by</span>
-        <div style="border-bottom: 1px solid #c4b8a8; margin-top: 20px;">&nbsp;</div>
-      </div>
+    <div style="margin-top: 24px; display: flex; gap: 40px; font-size: 12px; color: #6b5744;">
+      <span>Pulled by: _____________________</span>
+      <span>Verified by: _____________________</span>
     </div>
 
     <!-- Footer -->

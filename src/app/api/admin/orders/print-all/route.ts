@@ -64,32 +64,21 @@ export async function GET(req: NextRequest) {
       <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%) rotate(-30deg);font-size:80px;font-weight:900;opacity:0.05;color:${isPaid ? "#16a34a" : "#e11d48"};pointer-events:none;letter-spacing:8px">${statusLabel.toUpperCase()}</div>
 
       <div style="position:relative;z-index:1">
-        <div style="display:flex;justify-content:space-between;align-items:center;border-bottom:3px solid #16a34a;padding-bottom:14px;margin-bottom:16px">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;border-bottom:3px solid #16a34a;padding-bottom:12px;margin-bottom:14px">
           <div>
-            <h1 style="margin:0;font-size:20px;color:#166534">Mt. Lebanon Flower Sale</h1>
-            <p style="margin:2px 0 0;color:#6b5744;font-size:11px">Community Fundraiser &bull; Dean's Greenhouse</p>
+            <h1 style="margin:0;font-size:24px;font-weight:900;color:#2d2418">${order.customer_name}</h1>
+            <p style="margin:3px 0 0;font-size:12px;color:#6b5744">
+              ${order.customer_email || ""}${order.customer_email && order.customer_phone ? " &bull; " : ""}${order.customer_phone || ""}
+            </p>
+            <p style="margin:4px 0 0;font-size:11px;color:#6b5744">
+              <strong>Order #${order.order_number}</strong> &bull; ${new Date(order.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })} &bull;
+              <span style="display:inline-block;padding:1px 8px;border-radius:10px;font-size:10px;font-weight:700;background:${isPaid ? "#dcfce7" : "#fee2e2"};color:${isPaid ? "#166534" : "#be123c"}">${statusLabel}</span>
+            </p>
           </div>
-          <div style="text-align:center">
-            <img src="${qrCodes[order.id]}" style="width:90px;height:90px" />
-            <p style="margin:2px 0 0;font-size:8px;color:#6b5744">Scan to fulfill</p>
+          <div style="text-align:center;flex-shrink:0;margin-left:12px">
+            <img src="${qrCodes[order.id]}" style="width:80px;height:80px" />
+            <p style="margin:2px 0 0;font-size:7px;color:#6b5744">Scan to fulfill</p>
           </div>
-        </div>
-
-        <div style="display:flex;justify-content:space-between;margin-bottom:14px">
-          <div>
-            <h2 style="margin:0 0 4px;font-size:16px">Order #${order.order_number}</h2>
-            <p style="margin:1px 0;font-size:12px;color:#6b5744"><strong>Date:</strong> ${new Date(order.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}</p>
-            <p style="margin:1px 0;font-size:12px;color:#6b5744"><strong>Payment:</strong> ${order.payment_method.replace(/_/g, " ")}${order.check_number ? ` #${order.check_number}` : ""}</p>
-          </div>
-          <div style="text-align:right">
-            <span style="display:inline-block;padding:4px 12px;border-radius:20px;font-size:11px;font-weight:700;background:${isPaid ? "#dcfce7" : "#fee2e2"};color:${isPaid ? "#166534" : "#be123c"}">${statusLabel}</span>
-          </div>
-        </div>
-
-        <div style="background:#faf8f5;border:1px solid #e2d5c5;border-radius:8px;padding:10px 14px;margin-bottom:14px">
-          <p style="margin:0;font-size:14px;font-weight:600">${order.customer_name}</p>
-          ${order.customer_email ? `<p style="margin:1px 0;font-size:11px;color:#6b5744">${order.customer_email}</p>` : ""}
-          ${order.customer_phone ? `<p style="margin:1px 0;font-size:11px;color:#6b5744">${order.customer_phone}</p>` : ""}
         </div>
 
         ${order.organization ? `
@@ -115,15 +104,9 @@ export async function GET(req: NextRequest) {
           <span style="font-size:16px;font-weight:800;color:#166534">Total: ${formatMoney(order.subtotal_cents)}</span>
         </div>
 
-        <div style="margin-top:20px;display:flex;gap:14px">
-          <div style="flex:1;border:1px dashed #c4b8a8;border-radius:6px;padding:8px 10px">
-            <span style="font-size:9px;color:#6b5744;text-transform:uppercase;letter-spacing:1px">Pulled by</span>
-            <div style="border-bottom:1px solid #c4b8a8;margin-top:14px">&nbsp;</div>
-          </div>
-          <div style="flex:1;border:1px dashed #c4b8a8;border-radius:6px;padding:8px 10px">
-            <span style="font-size:9px;color:#6b5744;text-transform:uppercase;letter-spacing:1px">Verified by</span>
-            <div style="border-bottom:1px solid #c4b8a8;margin-top:14px">&nbsp;</div>
-          </div>
+        <div style="margin-top:16px;display:flex;gap:30px;font-size:11px;color:#6b5744">
+          <span>Pulled by: _____________________</span>
+          <span>Verified by: _____________________</span>
         </div>
       </div>
     </div>`;
