@@ -9,11 +9,19 @@ export async function GET(req: NextRequest) {
   const statusFilter = req.nextUrl.searchParams.get("status") || "paid";
   const supabase = createAdminClient();
 
-  const { data: orders } = await supabase
+  const { data: rawOrders } = await supabase
     .from("orders")
     .select("*")
     .eq("status", statusFilter)
     .order("order_number", { ascending: true });
+
+  // Sort by organization first, then order number
+  const orders = (rawOrders || []).sort((a, b) => {
+    const orgA = (a.organization || "zzz").toLowerCase();
+    const orgB = (b.organization || "zzz").toLowerCase();
+    if (orgA !== orgB) return orgA.localeCompare(orgB);
+    return a.order_number - b.order_number;
+  });
 
   if (!orders || orders.length === 0) {
     return new NextResponse(`<html><body style="font-family:sans-serif;text-align:center;padding:60px"><h2>No ${statusFilter} orders to print.</h2></body></html>`, {

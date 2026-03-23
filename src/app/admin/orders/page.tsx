@@ -19,18 +19,28 @@ function OrdersContent() {
   const searchParams = useSearchParams();
   const [orders, setOrders] = useState<Order[]>([]);
   const [statusFilter, setStatusFilter] = useState(searchParams.get("status") || "all");
+  const [orgFilter, setOrgFilter] = useState("all");
+  const [orgs, setOrgs] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     fetch("/api/admin/orders")
       .then((r) => r.json())
       .then((data) => {
-        setOrders(data.orders || []);
+        const orderList = data.orders || [];
+        setOrders(orderList);
+        // Extract unique org names
+        const orgNames = [...new Set(orderList.map((o: Order) => o.organization).filter(Boolean))] as string[];
+        setOrgs(orgNames.sort());
         setLoading(false);
       });
   }, []);
 
-  const filtered = statusFilter === "all" ? orders : orders.filter((o) => o.status === statusFilter);
+  const filtered = orders.filter((o) => {
+    if (statusFilter !== "all" && o.status !== statusFilter) return false;
+    if (orgFilter !== "all" && (o.organization || "") !== orgFilter) return false;
+    return true;
+  });
 
   return (
     <div>
@@ -62,7 +72,7 @@ function OrdersContent() {
         </div>
       </div>
 
-      <div className="flex gap-2 mb-4">
+      <div className="flex flex-wrap items-center gap-2 mb-4">
         {["all", "pending", "paid", "fulfilled", "cancelled"].map((s) => (
           <button
             key={s}
@@ -74,6 +84,19 @@ function OrdersContent() {
             {s}
           </button>
         ))}
+        <span className="text-earth-300 mx-1">|</span>
+        <select
+          value={orgFilter}
+          onChange={(e) => setOrgFilter(e.target.value)}
+          className={`px-3 py-1.5 rounded-lg text-xs font-medium border ${
+            orgFilter !== "all" ? "bg-garden-600 text-white border-garden-600" : "bg-white border-earth-200 text-earth-600"
+          }`}
+        >
+          <option value="all">All Organizations</option>
+          {orgs.map((org) => (
+            <option key={org} value={org}>{org}</option>
+          ))}
+        </select>
       </div>
 
       <div className="bg-white rounded-xl border border-earth-100 overflow-hidden shadow-sm">
