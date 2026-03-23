@@ -151,8 +151,7 @@ export async function sendOrderReceipt(data: OrderReceiptData) {
       <div style="background:#fef9c3;border:1px solid #fef08a;border-radius:8px;padding:14px;margin-bottom:20px">
         <strong style="font-size:13px;color:#6b5744">Pickup Information</strong>
         <p style="margin:6px 0 0;font-size:14px;color:#2d2418">
-          You will receive a separate notification with pickup date, time, and location details.
-          Please bring this email or your order number and ID for pickup.
+          Flowers can be picked up on Tuesday, May 19, 2026 from 4:00 pm to 7:00 pm in the Bower Hill Church parking lot at 70 Moffett St, Mt Lebanon, PA 15243.
         </p>
       </div>
 
