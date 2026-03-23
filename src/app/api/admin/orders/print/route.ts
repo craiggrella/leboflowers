@@ -173,8 +173,20 @@ export async function GET(req: NextRequest) {
       <p style="margin: 4px 0 0; font-size: 14px;">${order.notes}</p>
     </div>` : ""}
 
+    <!-- Verification -->
+    <div style="margin-top: 30px; display: flex; gap: 20px;">
+      <div style="flex: 1; border: 1px dashed #c4b8a8; border-radius: 8px; padding: 12px 14px;">
+        <span style="font-size: 11px; color: #6b5744; text-transform: uppercase; letter-spacing: 1px;">Pulled by</span>
+        <div style="border-bottom: 1px solid #c4b8a8; margin-top: 20px;">&nbsp;</div>
+      </div>
+      <div style="flex: 1; border: 1px dashed #c4b8a8; border-radius: 8px; padding: 12px 14px;">
+        <span style="font-size: 11px; color: #6b5744; text-transform: uppercase; letter-spacing: 1px;">Verified by</span>
+        <div style="border-bottom: 1px solid #c4b8a8; margin-top: 20px;">&nbsp;</div>
+      </div>
+    </div>
+
     <!-- Footer -->
-    <div style="text-align: center; margin-top: 40px; padding-top: 16px; border-top: 1px solid #e2d5c5; color: #6b5744; font-size: 12px;">
+    <div style="text-align: center; margin-top: 30px; padding-top: 16px; border-top: 1px solid #e2d5c5; color: #6b5744; font-size: 12px;">
       <p>Proceeds stay in Mt Lebanon and support community organizations. Thank you for helping us grow something beautiful together!</p>
     </div>
   </div>

@@ -114,6 +114,17 @@ export async function GET(req: NextRequest) {
         <div style="text-align:right;border-top:2px solid #166534;padding-top:8px">
           <span style="font-size:16px;font-weight:800;color:#166534">Total: ${formatMoney(order.subtotal_cents)}</span>
         </div>
+
+        <div style="margin-top:20px;display:flex;gap:14px">
+          <div style="flex:1;border:1px dashed #c4b8a8;border-radius:6px;padding:8px 10px">
+            <span style="font-size:9px;color:#6b5744;text-transform:uppercase;letter-spacing:1px">Pulled by</span>
+            <div style="border-bottom:1px solid #c4b8a8;margin-top:14px">&nbsp;</div>
+          </div>
+          <div style="flex:1;border:1px dashed #c4b8a8;border-radius:6px;padding:8px 10px">
+            <span style="font-size:9px;color:#6b5744;text-transform:uppercase;letter-spacing:1px">Verified by</span>
+            <div style="border-bottom:1px solid #c4b8a8;margin-top:14px">&nbsp;</div>
+          </div>
+        </div>
       </div>
     </div>`;
   });
