@@ -10,8 +10,8 @@ export async function POST(req: NextRequest) {
 
     const { customerName, customerEmail, customerPhone, paymentMethod, checkNumber, organization, items } = await req.json();
 
-    if (!customerName || !items?.length || !paymentMethod) {
-      return NextResponse.json({ error: "Missing fields" }, { status: 400 });
+    if (!customerName || !items?.length || !paymentMethod || !organization) {
+      return NextResponse.json({ error: "Missing fields — name, items, payment method, and organization are required" }, { status: 400 });
     }
 
     const supabase = createAdminClient();

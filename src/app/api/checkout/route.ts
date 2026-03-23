@@ -15,7 +15,7 @@ export async function POST(req: NextRequest) {
       organization,
     } = await req.json();
 
-    if (!sourceId || !items?.length || !customerName || !customerEmail) {
+    if (!sourceId || !items?.length || !customerName || !customerEmail || !organization) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
     }
 
