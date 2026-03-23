@@ -46,9 +46,22 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "User already exists" }, { status: 409 });
   }
 
+  // Create Supabase Auth account and send invite email
+  const { data: authData, error: authError } = await supabase.auth.admin.inviteUserByEmail(email);
+
+  if (authError) {
+    return NextResponse.json({ error: "Failed to send invite: " + authError.message }, { status: 500 });
+  }
+
+  // Insert into admin_users with the auth user_id linked
   const { error } = await supabase
     .from("admin_users")
-    .insert({ email, name: name || "", role });
+    .insert({
+      email,
+      name: name || "",
+      role,
+      user_id: authData.user?.id || null,
+    });
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   return NextResponse.json({ success: true });
