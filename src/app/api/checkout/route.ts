@@ -100,23 +100,27 @@ export async function POST(req: NextRequest) {
       console.error("Order items error:", itemsError);
     }
 
-    // Send receipt email (non-blocking)
+    // Send receipt email (must await — Vercel kills function after response)
     if (customerEmail) {
-      sendOrderReceipt({
-        orderNumber: order.order_number,
-        customerName,
-        customerEmail,
-        items: orderItems.map((i: { sku: string; product_name: string; price_cents: number; quantity: number }) => ({
-          sku: i.sku,
-          name: i.product_name,
-          priceCents: i.price_cents,
-          quantity: i.quantity,
-        })),
-        totalCents,
-        organization: organization || undefined,
-        paymentMethod: "online_card",
-        createdAt: new Date().toISOString(),
-      }).catch((err) => console.error("Receipt email failed:", err));
+      try {
+        await sendOrderReceipt({
+          orderNumber: order.order_number,
+          customerName,
+          customerEmail,
+          items: orderItems.map((i: { sku: string; product_name: string; price_cents: number; quantity: number }) => ({
+            sku: i.sku,
+            name: i.product_name,
+            priceCents: i.price_cents,
+            quantity: i.quantity,
+          })),
+          totalCents,
+          organization: organization || undefined,
+          paymentMethod: "online_card",
+          createdAt: new Date().toISOString(),
+        });
+      } catch (err) {
+        console.error("Receipt email failed:", err);
+      }
     }
 
     return NextResponse.json({ success: true, orderId: order.id });
