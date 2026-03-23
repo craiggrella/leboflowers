@@ -1,9 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { formatCurrency, slugify } from "@/lib/utils";
-import { Pencil, X, Save } from "lucide-react";
+import { Pencil, X, Save, ChevronUp, ChevronDown } from "lucide-react";
 import type { Product, Category } from "@/types";
+
+interface ProductWithSold extends Product {
+  sold_count: number;
+}
 
 interface EditForm {
   sku: string;
@@ -17,14 +21,26 @@ interface EditForm {
   image_url: string;
 }
 
+type SortField = "sku" | "name" | "price_cents" | "sold_count";
+type SortDir = "asc" | "desc";
+
 export default function AdminProductsPage() {
-  const [products, setProducts] = useState<Product[]>([]);
+  const [products, setProducts] = useState<ProductWithSold[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState<EditForm | null>(null);
   const [saving, setSaving] = useState(false);
+
+  // Sort
+  const [sortField, setSortField] = useState<SortField | null>(null);
+  const [sortDir, setSortDir] = useState<SortDir>("asc");
+
+  // Filters
+  const [filterCats, setFilterCats] = useState<string[]>([]);
+  const [filterSubs, setFilterSubs] = useState<string[]>([]);
+  const [filterStock, setFilterStock] = useState<string[]>([]);
 
   useEffect(() => {
     fetch("/api/admin/products")
@@ -36,7 +52,17 @@ export default function AdminProductsPage() {
       });
   }, []);
 
-  const openEdit = (product: Product) => {
+  // Derived filter options
+  const allSubcategories = useMemo(() => {
+    const subs = [...new Set(products.filter((p) => p.subcategory).map((p) => p.subcategory!))];
+    if (filterCats.length > 0) {
+      const catIds = categories.filter((c) => filterCats.includes(c.name)).map((c) => c.id);
+      return subs.filter((sub) => products.some((p) => p.subcategory === sub && catIds.includes(p.category_id)));
+    }
+    return subs.sort();
+  }, [products, categories, filterCats]);
+
+  const openEdit = (product: ProductWithSold) => {
     setEditingId(product.id);
     setForm({
       sku: product.sku,
@@ -51,45 +77,31 @@ export default function AdminProductsPage() {
     });
   };
 
-  const closeEdit = () => {
-    setEditingId(null);
-    setForm(null);
-  };
+  const closeEdit = () => { setEditingId(null); setForm(null); };
 
   const handleSave = async () => {
     if (!form || !editingId) return;
     setSaving(true);
-
     const priceCents = Math.round(parseFloat(form.price_dollars) * 100);
     const slug = slugify(`${form.sku}-${form.name}`);
-
     const res = await fetch("/api/admin/products", {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        id: editingId,
-        sku: form.sku,
-        name: form.name,
-        slug,
-        description: form.description || null,
-        price_cents: priceCents,
-        unit_label: form.unit_label,
-        category_id: form.category_id,
-        subcategory: form.subcategory || null,
-        in_stock: form.in_stock,
+        id: editingId, sku: form.sku, name: form.name, slug,
+        description: form.description || null, price_cents: priceCents,
+        unit_label: form.unit_label, category_id: form.category_id,
+        subcategory: form.subcategory || null, in_stock: form.in_stock,
         image_url: form.image_url || null,
       }),
     });
     const result = await res.json();
-
     if (result.success) {
-      setProducts((prev) =>
-        prev.map((p) =>
-          p.id === editingId
-            ? { ...p, sku: form.sku, name: form.name, slug, description: form.description || null, price_cents: priceCents, unit_label: form.unit_label, category_id: form.category_id, subcategory: form.subcategory || null, in_stock: form.in_stock, image_url: form.image_url || null }
-            : p
-        )
-      );
+      setProducts((prev) => prev.map((p) =>
+        p.id === editingId
+          ? { ...p, sku: form.sku, name: form.name, slug, description: form.description || null, price_cents: priceCents, unit_label: form.unit_label, category_id: form.category_id, subcategory: form.subcategory || null, in_stock: form.in_stock, image_url: form.image_url || null }
+          : p
+      ));
       closeEdit();
     }
     setSaving(false);
@@ -101,44 +113,173 @@ export default function AdminProductsPage() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ id: productId, in_stock: !currentlyInStock }),
     });
-    setProducts((prev) =>
-      prev.map((p) => (p.id === productId ? { ...p, in_stock: !currentlyInStock } : p))
-    );
+    setProducts((prev) => prev.map((p) => (p.id === productId ? { ...p, in_stock: !currentlyInStock } : p)));
   };
 
-  const filtered = search
-    ? products.filter(
-        (p) =>
-          p.name.toLowerCase().includes(search.toLowerCase()) ||
-          p.sku.toLowerCase().includes(search.toLowerCase())
-      )
-    : products;
+  const handleSort = (field: SortField) => {
+    if (sortField === field) {
+      setSortDir(sortDir === "asc" ? "desc" : "asc");
+    } else {
+      setSortField(field);
+      setSortDir("asc");
+    }
+  };
+
+  const SortIcon = ({ field }: { field: SortField }) => {
+    if (sortField !== field) return <span className="text-earth-300 ml-1">↕</span>;
+    return sortDir === "asc"
+      ? <ChevronUp className="w-3 h-3 inline ml-1" />
+      : <ChevronDown className="w-3 h-3 inline ml-1" />;
+  };
+
+  const toggleFilter = (arr: string[], setArr: (v: string[]) => void, val: string) => {
+    setArr(arr.includes(val) ? arr.filter((v) => v !== val) : [...arr, val]);
+  };
+
+  // Apply filters + search + sort
+  const filtered = useMemo(() => {
+    let result = products;
+
+    if (search) {
+      const q = search.toLowerCase();
+      result = result.filter((p) => p.name.toLowerCase().includes(q) || p.sku.toLowerCase().includes(q));
+    }
+
+    if (filterCats.length > 0) {
+      const catIds = categories.filter((c) => filterCats.includes(c.name)).map((c) => c.id);
+      result = result.filter((p) => catIds.includes(p.category_id));
+    }
+
+    if (filterSubs.length > 0) {
+      result = result.filter((p) => p.subcategory && filterSubs.includes(p.subcategory));
+    }
+
+    if (filterStock.length > 0 && filterStock.length < 2) {
+      const wantInStock = filterStock.includes("Yes");
+      result = result.filter((p) => p.in_stock === wantInStock);
+    }
+
+    if (sortField) {
+      result = [...result].sort((a, b) => {
+        let aVal: string | number = a[sortField];
+        let bVal: string | number = b[sortField];
+        if (typeof aVal === "string") { aVal = aVal.toLowerCase(); bVal = (bVal as string).toLowerCase(); }
+        if (aVal < bVal) return sortDir === "asc" ? -1 : 1;
+        if (aVal > bVal) return sortDir === "asc" ? 1 : -1;
+        return 0;
+      });
+    }
+
+    return result;
+  }, [products, categories, search, filterCats, filterSubs, filterStock, sortField, sortDir]);
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex items-center justify-between mb-4">
         <h1 className="font-display text-2xl font-bold text-earth-900">Products</h1>
-        <span className="text-sm text-earth-500">{products.length} total products</span>
+        <span className="text-sm text-earth-500">{products.length} total &middot; {filtered.length} shown</span>
       </div>
 
-      <input
-        type="text"
-        placeholder="Search by name or SKU..."
-        value={search}
-        onChange={(e) => setSearch(e.target.value)}
-        className="w-full max-w-sm px-4 py-2 rounded-lg border border-earth-200 text-sm mb-4 focus:ring-2 focus:ring-garden-400 focus:border-transparent"
-      />
+      {/* Search + Filters */}
+      <div className="flex flex-wrap gap-3 mb-4">
+        <input
+          type="text"
+          placeholder="Search name or SKU..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="px-3 py-2 rounded-lg border border-earth-200 text-sm focus:ring-2 focus:ring-garden-400 focus:border-transparent w-56"
+        />
+
+        {/* Category filter */}
+        <div className="relative group">
+          <button className={`px-3 py-2 rounded-lg border text-sm ${filterCats.length ? "bg-garden-50 border-garden-300 text-garden-700" : "border-earth-200 text-earth-600"}`}>
+            Category {filterCats.length > 0 && `(${filterCats.length})`}
+          </button>
+          <div className="absolute z-10 hidden group-hover:block bg-white border border-earth-200 rounded-lg shadow-lg mt-1 p-2 min-w-48">
+            {categories.map((cat) => (
+              <label key={cat.id} className="flex items-center gap-2 px-2 py-1.5 hover:bg-earth-50 rounded cursor-pointer text-sm">
+                <input
+                  type="checkbox"
+                  checked={filterCats.includes(cat.name)}
+                  onChange={() => toggleFilter(filterCats, setFilterCats, cat.name)}
+                  className="rounded border-earth-300"
+                />
+                {cat.name}
+              </label>
+            ))}
+          </div>
+        </div>
+
+        {/* Subcategory filter */}
+        <div className="relative group">
+          <button className={`px-3 py-2 rounded-lg border text-sm ${filterSubs.length ? "bg-garden-50 border-garden-300 text-garden-700" : "border-earth-200 text-earth-600"}`}>
+            Subcategory {filterSubs.length > 0 && `(${filterSubs.length})`}
+          </button>
+          <div className="absolute z-10 hidden group-hover:block bg-white border border-earth-200 rounded-lg shadow-lg mt-1 p-2 min-w-48 max-h-64 overflow-y-auto">
+            {allSubcategories.map((sub) => (
+              <label key={sub} className="flex items-center gap-2 px-2 py-1.5 hover:bg-earth-50 rounded cursor-pointer text-sm">
+                <input
+                  type="checkbox"
+                  checked={filterSubs.includes(sub)}
+                  onChange={() => toggleFilter(filterSubs, setFilterSubs, sub)}
+                  className="rounded border-earth-300"
+                />
+                {sub}
+              </label>
+            ))}
+          </div>
+        </div>
+
+        {/* In Stock filter */}
+        <div className="relative group">
+          <button className={`px-3 py-2 rounded-lg border text-sm ${filterStock.length ? "bg-garden-50 border-garden-300 text-garden-700" : "border-earth-200 text-earth-600"}`}>
+            In Stock {filterStock.length > 0 && `(${filterStock.length})`}
+          </button>
+          <div className="absolute z-10 hidden group-hover:block bg-white border border-earth-200 rounded-lg shadow-lg mt-1 p-2 min-w-32">
+            {["Yes", "No"].map((val) => (
+              <label key={val} className="flex items-center gap-2 px-2 py-1.5 hover:bg-earth-50 rounded cursor-pointer text-sm">
+                <input
+                  type="checkbox"
+                  checked={filterStock.includes(val)}
+                  onChange={() => toggleFilter(filterStock, setFilterStock, val)}
+                  className="rounded border-earth-300"
+                />
+                {val}
+              </label>
+            ))}
+          </div>
+        </div>
+
+        {/* Clear filters */}
+        {(filterCats.length > 0 || filterSubs.length > 0 || filterStock.length > 0 || search) && (
+          <button
+            onClick={() => { setFilterCats([]); setFilterSubs([]); setFilterStock([]); setSearch(""); }}
+            className="px-3 py-2 text-sm text-earth-500 hover:text-earth-700"
+          >
+            Clear all
+          </button>
+        )}
+      </div>
 
       <div className="bg-white rounded-xl border border-earth-100 overflow-hidden shadow-sm">
         <table className="w-full text-sm">
           <thead className="bg-earth-50 border-b border-earth-100">
             <tr>
-              <th className="text-left px-4 py-3 font-medium text-earth-600">SKU</th>
-              <th className="text-left px-4 py-3 font-medium text-earth-600">Name</th>
+              <th className="text-left px-4 py-3 font-medium text-earth-600 cursor-pointer select-none" onClick={() => handleSort("sku")}>
+                SKU <SortIcon field="sku" />
+              </th>
+              <th className="text-left px-4 py-3 font-medium text-earth-600 cursor-pointer select-none" onClick={() => handleSort("name")}>
+                Name <SortIcon field="name" />
+              </th>
               <th className="text-left px-4 py-3 font-medium text-earth-600">Category</th>
               <th className="text-left px-4 py-3 font-medium text-earth-600">Subcategory</th>
-              <th className="text-left px-4 py-3 font-medium text-earth-600">Price</th>
+              <th className="text-left px-4 py-3 font-medium text-earth-600 cursor-pointer select-none" onClick={() => handleSort("price_cents")}>
+                Price <SortIcon field="price_cents" />
+              </th>
               <th className="text-left px-4 py-3 font-medium text-earth-600">Unit</th>
+              <th className="text-left px-4 py-3 font-medium text-earth-600 cursor-pointer select-none" onClick={() => handleSort("sold_count")}>
+                # Sold <SortIcon field="sold_count" />
+              </th>
               <th className="text-left px-4 py-3 font-medium text-earth-600">In Stock</th>
               <th className="text-left px-4 py-3 font-medium text-earth-600">Edit</th>
             </tr>
@@ -150,10 +291,11 @@ export default function AdminProductsPage() {
                 <tr key={product.id} className="border-b border-earth-50 hover:bg-earth-50/50">
                   <td className="px-4 py-3 font-mono text-xs">{product.sku}</td>
                   <td className="px-4 py-3 font-medium">{product.name}</td>
-                  <td className="px-4 py-3 text-earth-500">{cat?.name}</td>
+                  <td className="px-4 py-3 text-earth-500 text-xs">{cat?.name}</td>
                   <td className="px-4 py-3 text-earth-500 text-xs">{product.subcategory || "—"}</td>
                   <td className="px-4 py-3">{formatCurrency(product.price_cents)}</td>
-                  <td className="px-4 py-3 text-earth-500">{product.unit_label}</td>
+                  <td className="px-4 py-3 text-earth-500 text-xs">{product.unit_label}</td>
+                  <td className="px-4 py-3 font-semibold">{product.sold_count || 0}</td>
                   <td className="px-4 py-3">
                     <button
                       onClick={() => toggleStock(product.id, product.in_stock)}
@@ -165,11 +307,7 @@ export default function AdminProductsPage() {
                     </button>
                   </td>
                   <td className="px-4 py-3">
-                    <button
-                      onClick={() => openEdit(product)}
-                      className="text-earth-400 hover:text-garden-600 transition-colors"
-                      title="Edit product"
-                    >
+                    <button onClick={() => openEdit(product)} className="text-earth-400 hover:text-garden-600 transition-colors" title="Edit product">
                       <Pencil className="w-4 h-4" />
                     </button>
                   </td>
@@ -179,144 +317,66 @@ export default function AdminProductsPage() {
           </tbody>
         </table>
 
-        {loading && (
-          <div className="text-center py-8 text-earth-500 text-sm">Loading products...</div>
-        )}
+        {loading && <div className="text-center py-8 text-earth-500 text-sm">Loading products...</div>}
       </div>
 
       {/* Edit Modal */}
       {editingId && form && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onClick={closeEdit}>
-          <div
-            className="bg-white rounded-2xl shadow-xl w-full max-w-lg mx-4 max-h-[90vh] overflow-y-auto"
-            onClick={(e) => e.stopPropagation()}
-          >
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg mx-4 max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between p-5 border-b border-earth-100">
               <h2 className="font-display text-lg font-bold text-earth-900">Edit Product</h2>
-              <button onClick={closeEdit} className="text-earth-400 hover:text-earth-600">
-                <X className="w-5 h-5" />
-              </button>
+              <button onClick={closeEdit} className="text-earth-400 hover:text-earth-600"><X className="w-5 h-5" /></button>
             </div>
-
             <div className="p-5 space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-earth-700 mb-1">SKU</label>
-                  <input
-                    type="text"
-                    value={form.sku}
-                    onChange={(e) => setForm({ ...form, sku: e.target.value })}
-                    className="w-full px-3 py-2 rounded-lg border border-earth-200 text-sm focus:ring-2 focus:ring-garden-400 focus:border-transparent"
-                  />
+                  <input type="text" value={form.sku} onChange={(e) => setForm({ ...form, sku: e.target.value })} className="w-full px-3 py-2 rounded-lg border border-earth-200 text-sm focus:ring-2 focus:ring-garden-400 focus:border-transparent" />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-earth-700 mb-1">Price ($)</label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    value={form.price_dollars}
-                    onChange={(e) => setForm({ ...form, price_dollars: e.target.value })}
-                    className="w-full px-3 py-2 rounded-lg border border-earth-200 text-sm focus:ring-2 focus:ring-garden-400 focus:border-transparent"
-                  />
+                  <input type="number" step="0.01" min="0" value={form.price_dollars} onChange={(e) => setForm({ ...form, price_dollars: e.target.value })} className="w-full px-3 py-2 rounded-lg border border-earth-200 text-sm focus:ring-2 focus:ring-garden-400 focus:border-transparent" />
                 </div>
               </div>
-
               <div>
                 <label className="block text-sm font-medium text-earth-700 mb-1">Name</label>
-                <input
-                  type="text"
-                  value={form.name}
-                  onChange={(e) => setForm({ ...form, name: e.target.value })}
-                  className="w-full px-3 py-2 rounded-lg border border-earth-200 text-sm focus:ring-2 focus:ring-garden-400 focus:border-transparent"
-                />
+                <input type="text" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className="w-full px-3 py-2 rounded-lg border border-earth-200 text-sm focus:ring-2 focus:ring-garden-400 focus:border-transparent" />
               </div>
-
               <div>
                 <label className="block text-sm font-medium text-earth-700 mb-1">Description</label>
-                <textarea
-                  rows={3}
-                  value={form.description}
-                  onChange={(e) => setForm({ ...form, description: e.target.value })}
-                  className="w-full px-3 py-2 rounded-lg border border-earth-200 text-sm focus:ring-2 focus:ring-garden-400 focus:border-transparent"
-                />
+                <textarea rows={3} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} className="w-full px-3 py-2 rounded-lg border border-earth-200 text-sm focus:ring-2 focus:ring-garden-400 focus:border-transparent" />
               </div>
-
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-earth-700 mb-1">Unit Label</label>
-                  <input
-                    type="text"
-                    value={form.unit_label}
-                    onChange={(e) => setForm({ ...form, unit_label: e.target.value })}
-                    className="w-full px-3 py-2 rounded-lg border border-earth-200 text-sm focus:ring-2 focus:ring-garden-400 focus:border-transparent"
-                  />
+                  <input type="text" value={form.unit_label} onChange={(e) => setForm({ ...form, unit_label: e.target.value })} className="w-full px-3 py-2 rounded-lg border border-earth-200 text-sm focus:ring-2 focus:ring-garden-400 focus:border-transparent" />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-earth-700 mb-1">Category</label>
-                  <select
-                    value={form.category_id}
-                    onChange={(e) => setForm({ ...form, category_id: e.target.value })}
-                    className="w-full px-3 py-2 rounded-lg border border-earth-200 text-sm focus:ring-2 focus:ring-garden-400 focus:border-transparent"
-                  >
-                    {categories.map((cat) => (
-                      <option key={cat.id} value={cat.id}>{cat.name}</option>
-                    ))}
+                  <select value={form.category_id} onChange={(e) => setForm({ ...form, category_id: e.target.value })} className="w-full px-3 py-2 rounded-lg border border-earth-200 text-sm focus:ring-2 focus:ring-garden-400 focus:border-transparent">
+                    {categories.map((cat) => (<option key={cat.id} value={cat.id}>{cat.name}</option>))}
                   </select>
                 </div>
               </div>
-
               <div>
                 <label className="block text-sm font-medium text-earth-700 mb-1">Subcategory</label>
-                <input
-                  type="text"
-                  value={form.subcategory}
-                  onChange={(e) => setForm({ ...form, subcategory: e.target.value })}
-                  className="w-full px-3 py-2 rounded-lg border border-earth-200 text-sm focus:ring-2 focus:ring-garden-400 focus:border-transparent"
-                  placeholder="e.g. Begonia Flat, Specialty HB"
-                />
+                <input type="text" value={form.subcategory} onChange={(e) => setForm({ ...form, subcategory: e.target.value })} className="w-full px-3 py-2 rounded-lg border border-earth-200 text-sm focus:ring-2 focus:ring-garden-400 focus:border-transparent" placeholder="e.g. Begonia Flat, Specialty HB" />
               </div>
-
               <div>
                 <label className="block text-sm font-medium text-earth-700 mb-1">Image URL</label>
-                <input
-                  type="url"
-                  value={form.image_url}
-                  onChange={(e) => setForm({ ...form, image_url: e.target.value })}
-                  placeholder="https://..."
-                  className="w-full px-3 py-2 rounded-lg border border-earth-200 text-sm focus:ring-2 focus:ring-garden-400 focus:border-transparent"
-                />
-                {form.image_url && (
-                  <img src={form.image_url} alt="Preview" className="mt-2 w-20 h-20 object-cover rounded-lg border border-earth-200" />
-                )}
+                <input type="url" value={form.image_url} onChange={(e) => setForm({ ...form, image_url: e.target.value })} placeholder="https://..." className="w-full px-3 py-2 rounded-lg border border-earth-200 text-sm focus:ring-2 focus:ring-garden-400 focus:border-transparent" />
+                {form.image_url && <img src={form.image_url} alt="Preview" className="mt-2 w-20 h-20 object-cover rounded-lg border border-earth-200" />}
               </div>
-
               <div className="flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  id="in_stock"
-                  checked={form.in_stock}
-                  onChange={(e) => setForm({ ...form, in_stock: e.target.checked })}
-                  className="rounded border-earth-300"
-                />
+                <input type="checkbox" id="in_stock" checked={form.in_stock} onChange={(e) => setForm({ ...form, in_stock: e.target.checked })} className="rounded border-earth-300" />
                 <label htmlFor="in_stock" className="text-sm text-earth-700">In Stock</label>
               </div>
             </div>
-
             <div className="flex justify-end gap-3 p-5 border-t border-earth-100">
-              <button
-                onClick={closeEdit}
-                className="px-4 py-2 rounded-lg text-sm font-medium text-earth-600 hover:bg-earth-100 transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleSave}
-                disabled={saving}
-                className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium bg-garden-600 text-white hover:bg-garden-700 transition-colors disabled:opacity-50"
-              >
-                <Save className="w-4 h-4" />
-                {saving ? "Saving..." : "Save Changes"}
+              <button onClick={closeEdit} className="px-4 py-2 rounded-lg text-sm font-medium text-earth-600 hover:bg-earth-100 transition-colors">Cancel</button>
+              <button onClick={handleSave} disabled={saving} className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium bg-garden-600 text-white hover:bg-garden-700 transition-colors disabled:opacity-50">
+                <Save className="w-4 h-4" />{saving ? "Saving..." : "Save Changes"}
               </button>
             </div>
           </div>

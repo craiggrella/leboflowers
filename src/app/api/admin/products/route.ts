@@ -7,13 +7,27 @@ export async function GET() {
   if (!admin) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const supabase = createAdminClient();
-  const [prodsRes, catsRes] = await Promise.all([
+  const [prodsRes, catsRes, itemsRes] = await Promise.all([
     supabase.from("products").select("*").order("category_id").order("sort_order"),
     supabase.from("categories").select("*").order("sort_order"),
+    supabase.from("order_items").select("product_id, quantity"),
   ]);
 
+  // Aggregate sold counts
+  const soldCounts: Record<string, number> = {};
+  for (const item of (itemsRes.data || [])) {
+    if (item.product_id) {
+      soldCounts[item.product_id] = (soldCounts[item.product_id] || 0) + item.quantity;
+    }
+  }
+
+  const products = (prodsRes.data || []).map((p) => ({
+    ...p,
+    sold_count: soldCounts[p.id] || 0,
+  }));
+
   return NextResponse.json({
-    products: prodsRes.data || [],
+    products,
     categories: catsRes.data || [],
   });
 }
