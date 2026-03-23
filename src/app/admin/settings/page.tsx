@@ -73,7 +73,7 @@ export default function SettingsPage() {
     const data = await res.json();
 
     if (data.success) {
-      setSuccess(`Added ${newEmail} as ${newRole}`);
+      setSuccess(`Added ${newEmail} as ${newRole}. Temporary password: ${data.tempPassword} — share this with them to log in.`);
       setNewEmail("");
       setNewName("");
       setShowAdd(false);

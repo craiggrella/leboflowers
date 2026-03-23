@@ -46,11 +46,16 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "User already exists" }, { status: 409 });
   }
 
-  // Create Supabase Auth account and send invite email
-  const { data: authData, error: authError } = await supabase.auth.admin.inviteUserByEmail(email);
+  // Create Supabase Auth account with temporary password
+  const tempPassword = email.split("@")[0] + "Lebo2026!";
+  const { data: authData, error: authError } = await supabase.auth.admin.createUser({
+    email,
+    password: tempPassword,
+    email_confirm: true,
+  });
 
   if (authError) {
-    return NextResponse.json({ error: "Failed to send invite: " + authError.message }, { status: 500 });
+    return NextResponse.json({ error: "Failed to create account: " + authError.message }, { status: 500 });
   }
 
   // Insert into admin_users with the auth user_id linked
@@ -64,7 +69,7 @@ export async function POST(req: NextRequest) {
     });
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-  return NextResponse.json({ success: true });
+  return NextResponse.json({ success: true, tempPassword });
 }
 
 export async function PATCH(req: NextRequest) {
