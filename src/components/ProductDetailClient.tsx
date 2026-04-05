@@ -48,13 +48,10 @@ export default function ProductDetailClient({
       <div className="grid md:grid-cols-2 gap-8 lg:gap-12">
         <div className="relative aspect-square bg-earth-50 rounded-2xl overflow-hidden">
           {product.image_url ? (
-            <Image
+            <img
               src={product.image_url}
               alt={product.name}
-              fill
-              className="object-cover"
-              sizes="(max-width: 768px) 100vw, 50vw"
-              priority
+              className="absolute inset-0 w-full h-full object-cover"
             />
           ) : (
             <div className="w-full h-full flex items-center justify-center text-earth-300">

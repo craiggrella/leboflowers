@@ -36,12 +36,11 @@ export default function ProductCard({ product }: { product: Product }) {
     >
       <div className="relative aspect-square bg-earth-50 overflow-hidden">
         {product.image_url ? (
-          <Image
+          <img
             src={product.image_url}
             alt={product.name}
-            fill
-            className="object-cover group-hover:scale-105 transition-transform duration-500"
-            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
+            className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+            loading="lazy"
           />
         ) : (
           <div className="w-full h-full flex items-center justify-center text-earth-300">

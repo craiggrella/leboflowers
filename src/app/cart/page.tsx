@@ -40,7 +40,7 @@ export default function CartPage() {
             >
               <div className="relative w-20 h-20 rounded-lg overflow-hidden bg-earth-50 flex-shrink-0">
                 {item.imageUrl ? (
-                  <Image src={item.imageUrl} alt={item.name} fill className="object-cover" sizes="80px" />
+                  <img src={item.imageUrl} alt={item.name} className="absolute inset-0 w-full h-full object-cover" />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center text-earth-300">
                     <ShoppingCart className="w-6 h-6" />
