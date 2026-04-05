@@ -47,7 +47,7 @@ export async function POST(req: NextRequest) {
   }
 
   // Create Supabase Auth account with temporary password
-  const tempPassword = "FlowersAndLoveforLebo1!";
+  const tempPassword = process.env.ADMIN_TEMP_PASSWORD || "ChangeMeNow2026!";
   const { data: authData, error: authError } = await supabase.auth.admin.createUser({
     email,
     password: tempPassword,
