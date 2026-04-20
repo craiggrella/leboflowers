@@ -19,17 +19,19 @@ export default function AdminDashboard() {
 
   useEffect(() => {
     fetch("/api/admin/stats")
-      .then((r) => r.json())
-      .then((data) => {
+      .then(async (r) => {
+        if (!r.ok) return;
+        const data = await r.json();
         setStats({
-          totalOrders: data.totalOrders,
-          totalRevenue: data.totalRevenue,
-          totalProducts: data.totalProducts,
-          pendingOrders: data.pendingOrders,
+          totalOrders: data.totalOrders ?? 0,
+          totalRevenue: data.totalRevenue ?? 0,
+          totalProducts: data.totalProducts ?? 0,
+          pendingOrders: data.pendingOrders ?? 0,
         });
-        setRecentOrders(data.recentOrders);
+        setRecentOrders(data.recentOrders ?? []);
         setLoading(false);
-      });
+      })
+      .catch(() => {});
   }, []);
 
   const cards = [
