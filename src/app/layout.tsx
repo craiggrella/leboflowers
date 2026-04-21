@@ -1,8 +1,7 @@
 import type { Metadata } from "next";
 import { Inter, Playfair_Display } from "next/font/google";
 import { CartProvider } from "@/context/CartContext";
-import SiteHeader from "@/components/SiteHeader";
-import SiteFooter from "@/components/SiteFooter";
+import LayoutChrome from "@/components/LayoutChrome";
 import "./globals.css";
 
 const inter = Inter({
@@ -16,9 +15,9 @@ const playfair = Playfair_Display({
 });
 
 export const metadata: Metadata = {
-  title: "Mt. Lebanon Flower Sale | Community Fundraiser",
+  title: "Thank You | Mt. Lebanon Flower Sale",
   description:
-    "Support our community! Shop beautiful flowers from Dean's Greenhouse supporting Mt Lebanon nonprofit organizations.",
+    "Thank you, Mt. Lebanon, for making this year's flower sale a blooming success supporting our local nonprofits.",
 };
 
 export default function RootLayout({
@@ -30,11 +29,7 @@ export default function RootLayout({
     <html lang="en">
       <body className={`${inter.variable} ${playfair.variable} antialiased`}>
         <CartProvider>
-          <div className="min-h-screen flex flex-col">
-            <SiteHeader />
-            <main className="flex-1">{children}</main>
-            <SiteFooter />
-          </div>
+          <LayoutChrome>{children}</LayoutChrome>
         </CartProvider>
       </body>
     </html>
