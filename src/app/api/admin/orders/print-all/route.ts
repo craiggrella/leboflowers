@@ -42,7 +42,7 @@ export async function GET(req: NextRequest) {
   // Generate all QR codes
   const qrCodes: Record<string, string> = {};
   for (const order of orders) {
-    qrCodes[order.id] = await QRCode.toDataURL(`${siteUrl}/admin/fulfill?id=${order.id}`, {
+    qrCodes[order.id] = await QRCode.toDataURL(`${siteUrl}/fulfill?id=${order.id}`, {
       width: 150,
       margin: 1,
       color: { dark: "#166534", light: "#ffffff" },

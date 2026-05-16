@@ -27,7 +27,7 @@ export async function GET(req: NextRequest) {
 
   // Generate QR code
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://leboflowers.vercel.app";
-  const fulfillUrl = `${siteUrl}/admin/fulfill?id=${orderId}`;
+  const fulfillUrl = `${siteUrl}/fulfill?id=${orderId}`;
   const qrCodeDataUrl = await QRCode.toDataURL(fulfillUrl, {
     width: 200,
     margin: 1,

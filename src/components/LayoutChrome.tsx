@@ -6,7 +6,7 @@ import SiteFooter from "./SiteFooter";
 
 export default function LayoutChrome({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const bare = pathname === "/";
+  const bare = pathname === "/" || pathname === "/fulfill";
 
   if (bare) {
     return <>{children}</>;
